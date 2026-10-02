@@ -1,6 +1,10 @@
-# WiFi Guardian
+<p align="center"><img src="static/veas-logo.svg" alt="VEAS RÉSEAUX" width="430"></p>
 
-WiFi Guardian is a local network observability tool. It discovers devices on the current LAN, measures local IP traffic, and reports sustained TCP port-scan patterns in a browser dashboard.
+# VEAS RÉSEAUX
+
+**V**ue d'**E**nsemble, **A**nalyse et **S**écurité **Réseaux**.
+
+VEAS RÉSEAUX is a local network observability tool. It discovers devices on the current LAN, measures local IP traffic, and reports sustained TCP port-scan patterns in a browser dashboard.
 
 Use it only on networks you own or are authorized to administer. Packet capture and ARP discovery require elevated network permissions.
 
@@ -19,7 +23,7 @@ Use it only on networks you own or are authorized to administer. Packet capture 
 - Offers REST snapshots and live Socket.IO updates.
 
 - Supervises its capture, scan, and flush workers: a crashed worker is restarted with backoff, and the capture follows interface or network changes without a restart.
-- Persists devices, structured alerts, and hourly traffic totals in SQLite (`DB_PATH`, default `data/wifi_guardian.db`) with a `RETENTION_DAYS` retention window.
+- Persists devices, structured alerts, and hourly traffic totals in SQLite (`DB_PATH`, default `data/veas.db`) with a `RETENTION_DAYS` retention window.
 - Reports component health on `GET /api/health` (HTTP 503 when degraded), also used by the Docker healthcheck and shown in the dashboard header.
 
 Live counters and the packet metadata history stay in memory; set `DB_PATH=` (empty) to run without any persistence.
@@ -45,7 +49,7 @@ Copy `.env.example` to `.env` to change settings. `CORS_ALLOWED_ORIGINS` is opti
 On the default `127.0.0.1` bind no login is required. To expose the dashboard on the network, configure a login and, for scripts, a token:
 
 ```bash
-python -m moniwifi.auth            # prints a password hash
+python -m veas.auth            # prints a password hash
 # .env
 HOST=0.0.0.0
 AUTH_USERNAME=admin
@@ -62,8 +66,8 @@ The application refuses to start on a non-loopback address without authenticatio
 The same detection and correlation pipeline can analyse a pcap file recorded elsewhere (tcpdump, Wireshark):
 
 ```bash
-python -m moniwifi.replay capture.pcap --gateway 192.168.1.1 --intel-dir data/intel
-python -m moniwifi.replay capture.pcap --network 10.0.0.0/24 --json > report.json
+python -m veas.replay capture.pcap --gateway 192.168.1.1 --intel-dir data/intel
+python -m veas.replay capture.pcap --network 10.0.0.0/24 --json > report.json
 ```
 
 The local network is inferred when `--network` is omitted. The exit code is 1 when a high or critical incident is found, which makes it usable in scripts.
@@ -86,7 +90,7 @@ The compose configuration grants only `NET_ADMIN` and `NET_RAW`, not full privil
 
 ```bash
 python3 -m unittest discover -s tests -t . -v   # or: make test
-python3 -m compileall -q app.py config.py moniwifi
+python3 -m compileall -q app.py config.py veas
 ```
 
 ## SIEM integration

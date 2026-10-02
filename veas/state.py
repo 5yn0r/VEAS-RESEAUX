@@ -4,9 +4,9 @@ import time
 from collections import Counter, OrderedDict, defaultdict, deque
 from threading import Lock
 
-from moniwifi.devices import DeviceRegistry
-from moniwifi.dnslog import DomainTracker
-from moniwifi.flows import FlowTable
+from veas.devices import DeviceRegistry
+from veas.dnslog import DomainTracker
+from veas.flows import FlowTable
 
 
 class MonitorState:

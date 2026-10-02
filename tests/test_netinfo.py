@@ -1,6 +1,6 @@
 import unittest
 
-from moniwifi.netinfo import NetworkContext
+from veas.netinfo import NetworkContext
 from tests.helpers import FakeClock, FakeNetifaces
 
 

@@ -1,24 +1,24 @@
 # Envoyer les alertes vers un SIEM
 
-Un SIEM (Security Information and Event Management) centralise les journaux de toutes les sources d'une entreprise (pare-feu, serveurs, EDR, IDS...) pour les corréler et les investiguer. En SOC, c'est l'outil principal de l'analyste. WiFi Guardian peut y envoyer ses alertes et ses incidents.
+Un SIEM (Security Information and Event Management) centralise les journaux de toutes les sources d'une entreprise (pare-feu, serveurs, EDR, IDS...) pour les corréler et les investiguer. En SOC, c'est l'outil principal de l'analyste. VEAS RÉSEAUX peut y envoyer ses alertes et ses incidents.
 
-Rien de tout cela n'est obligatoire : WiFi Guardian fonctionne seul. Ce guide sert à t'entraîner avec les outils utilisés en entreprise.
+Rien de tout cela n'est obligatoire : VEAS RÉSEAUX fonctionne seul. Ce guide sert à t'entraîner avec les outils utilisés en entreprise.
 
-## Ce que WiFi Guardian envoie
+## Ce que VEAS RÉSEAUX envoie
 
 Chaque alerte et chaque incident (créé, aggravé ou changé de statut) devient un événement JSON au format **ECS** (Elastic Common Schema), le vocabulaire de champs le plus répandu :
 
 | Champ | Exemple | Sens |
 | --- | --- | --- |
 | `@timestamp` | `2025-03-14T21:05:12.431Z` | Heure de l'événement (UTC) |
-| `event.dataset` | `wifi_guardian.alert` ou `wifi_guardian.incident` | Type d'événement |
+| `event.dataset` | `veas.alert` ou `veas.incident` | Type d'événement |
 | `event.action` | `arp_spoofing` | Type d'alerte |
 | `event.severity` | `95` | Gravité de 0 à 100 |
 | `log.level` | `critical` | Gravité en texte |
 | `source.ip`, `source.mac`, `destination.ip` | `192.168.1.66` | Machines concernées |
 | `threat.technique.id` | `["T1557.002"]` | Technique MITRE ATT&CK |
 | `threat.tactic.name` | `["credential-access"]` | Tactique MITRE ATT&CK |
-| `wifi_guardian.evidence` | `{...}` | Preuves détaillées |
+| `veas.evidence` | `{...}` | Preuves détaillées |
 
 Deux moyens de transport, utilisables ensemble :
 
@@ -38,12 +38,12 @@ SIEM_SYSLOG_FORMAT=cef
 SIEM_JSON_FILE=data/siem/alerts.jsonl
 ```
 
-Relance WiFi Guardian : chaque alerte s'affiche dans le terminal 1 et s'ajoute à `data/siem/alerts.jsonl`. `/api/health` montre les compteurs dans la section `siem`.
+Relance VEAS RÉSEAUX : chaque alerte s'affiche dans le terminal 1 et s'ajoute à `data/siem/alerts.jsonl`. `/api/health` montre les compteurs dans la section `siem`.
 
 Pour générer des alertes sans attaquer ton réseau, rejoue une capture :
 
 ```bash
-python -m moniwifi.replay capture.pcap --siem-json data/siem/replay.jsonl
+python -m veas.replay capture.pcap --siem-json data/siem/replay.jsonl
 ```
 
 ## Option 1 : Wazuh (gratuit, open source, très utilisé)
@@ -63,7 +63,7 @@ Le tableau de bord est sur <https://localhost>. Les identifiants par défaut son
 
 ### Faire lire le fichier par l'agent Wazuh
 
-Installe l'agent Wazuh sur la machine qui fait tourner WiFi Guardian (voir « Deploy new agent » dans le tableau de bord), puis ajoute dans `/var/ossec/etc/ossec.conf` de l'agent :
+Installe l'agent Wazuh sur la machine qui fait tourner VEAS RÉSEAUX (voir « Deploy new agent » dans le tableau de bord), puis ajoute dans `/var/ossec/etc/ossec.conf` de l'agent :
 
 ```xml
 <localfile>
@@ -79,33 +79,33 @@ Puis `sudo systemctl restart wazuh-agent`.
 Wazuh ne crée une alerte que si une règle correspond. Sur le manager, ajoute dans `/var/ossec/etc/rules/local_rules.xml` :
 
 ```xml
-<group name="wifi_guardian,">
-  <!-- Tout événement WiFi Guardian -->
+<group name="veas,">
+  <!-- Tout événement VEAS RÉSEAUX -->
   <rule id="100500" level="3">
     <decoded_as>json</decoded_as>
-    <field name="event.module">wifi_guardian</field>
-    <description>WiFi Guardian: $(message)</description>
+    <field name="event.module">veas</field>
+    <description>VEAS RÉSEAUX: $(message)</description>
   </rule>
 
   <!-- Gravité moyenne -->
   <rule id="100501" level="7">
     <if_sid>100500</if_sid>
     <field name="log.level">^medium$</field>
-    <description>WiFi Guardian (moyen): $(message)</description>
+    <description>VEAS RÉSEAUX (moyen): $(message)</description>
   </rule>
 
   <!-- Gravité haute ou critique : visible en priorité dans le tableau de bord -->
   <rule id="100502" level="12">
     <if_sid>100500</if_sid>
     <field name="log.level" type="pcre2">^(high|critical)$</field>
-    <description>WiFi Guardian (grave): $(message)</description>
+    <description>VEAS RÉSEAUX (grave): $(message)</description>
   </rule>
 
   <!-- Exemple de règle dédiée avec sa technique MITRE -->
   <rule id="100510" level="13">
     <if_sid>100500</if_sid>
     <field name="event.action">^arp_spoofing$</field>
-    <description>WiFi Guardian: usurpation ARP de la passerelle ($(source.ip))</description>
+    <description>VEAS RÉSEAUX: usurpation ARP de la passerelle ($(source.ip))</description>
     <mitre>
       <id>T1557.002</id>
     </mitre>
@@ -124,7 +124,7 @@ Dans `filebeat.yml` :
 ```yaml
 filebeat.inputs:
   - type: filestream
-    id: wifi-guardian
+    id: veas-reseaux
     paths:
       - /chemin/vers/VEAS_NETWORK/data/siem/alerts.jsonl
     parsers:

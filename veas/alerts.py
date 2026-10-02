@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 import uuid
 
-from moniwifi.attack import techniques_for
+from veas.attack import techniques_for
 
 SEVERITIES = ("info", "low", "medium", "high", "critical")
 

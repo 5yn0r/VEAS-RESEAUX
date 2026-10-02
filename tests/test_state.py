@@ -1,7 +1,7 @@
 import unittest
 
-from moniwifi.alerts import make_alert
-from moniwifi.state import MonitorState
+from veas.alerts import make_alert
+from veas.state import MonitorState
 
 
 class MonitorStateTests(unittest.TestCase):

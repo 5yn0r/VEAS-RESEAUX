@@ -25,7 +25,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Compile
-        run: python -m compileall -q app.py config.py moniwifi
+        run: python -m compileall -q app.py config.py veas
 
       - name: Unit and end-to-end tests
         run: python -m unittest discover -s tests -t . -v

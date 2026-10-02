@@ -12,7 +12,7 @@
 - Fix: identity alerts used the system clock instead of the packet capture time.
 
 - Authentication: dashboard login with hashed password, API bearer token, login rate limiting, same-origin check for cookie-authenticated writes, Socket.IO authentication, and refusal to serve a non-loopback address without authentication.
-- Offline pcap analysis (`python -m moniwifi.replay`) with the live pipeline, and end-to-end tests that replay an attack scenario.
+- Offline pcap analysis (`python -m veas.replay`) with the live pipeline, and end-to-end tests that replay an attack scenario.
 - Detections use packet capture timestamps.
 - CSV/JSON export endpoint and dashboard export buttons; device detail drawer (identity, baseline, incidents, alerts, domains, flows, DNS).
 - Fix: unicast DNS from source port 5353 was treated as mDNS.

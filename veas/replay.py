@@ -1,6 +1,6 @@
 """Analyse a pcap file offline with the same pipeline as live capture.
 
-Usage: python -m moniwifi.replay capture.pcap [--network 192.168.1.0/24] [--gateway 192.168.1.1]
+Usage: python -m veas.replay capture.pcap [--network 192.168.1.0/24] [--gateway 192.168.1.1]
 """
 
 from __future__ import annotations
@@ -13,12 +13,12 @@ from collections import Counter
 
 from scapy.all import IP, PcapReader
 
-from moniwifi.detectors import DetectionSettings
-from moniwifi.monitor import NetworkMonitor, settings_from_config
-from moniwifi.netinfo import StaticNetworkContext
-from moniwifi.siem import JsonFileSink, SiemExporter
-from moniwifi.state import MonitorState
-from moniwifi.threatintel import ThreatIntel
+from veas.detectors import DetectionSettings
+from veas.monitor import NetworkMonitor, settings_from_config
+from veas.netinfo import StaticNetworkContext
+from veas.siem import JsonFileSink, SiemExporter
+from veas.state import MonitorState
+from veas.threatintel import ThreatIntel
 
 
 class NullSocketIO:
@@ -112,7 +112,7 @@ def format_report(report: dict) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Analyse a pcap with WiFi Guardian detections.")
+    parser = argparse.ArgumentParser(description="Analyse a pcap with VEAS RÉSEAUX detections.")
     parser.add_argument("pcap")
     parser.add_argument("--network", help="local network CIDR (inferred when omitted)")
     parser.add_argument("--gateway", help="gateway IP, enables ARP-spoofing detection")

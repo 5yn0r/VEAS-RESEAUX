@@ -9,7 +9,7 @@ import threading
 import time
 from pathlib import Path
 
-from moniwifi.attack import techniques_for
+from veas.attack import techniques_for
 
 logger = logging.getLogger(__name__)
 

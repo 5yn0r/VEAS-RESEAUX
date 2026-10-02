@@ -14,7 +14,7 @@ import urllib.request
 from collections import deque
 from email.message import EmailMessage
 
-from moniwifi.incidents import SEVERITY_WEIGHT
+from veas.incidents import SEVERITY_WEIGHT
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class EmailChannel:
 def format_incident(incident: dict, event: str) -> tuple[str, str]:
     verb = {"created": "New", "escalated": "Escalated", "test": "Test"}.get(event, "Updated")
     subject = incident.get("hostname") or incident.get("ip") or incident.get("mac") or incident.get("entity")
-    title = f"[WiFi Guardian] {verb} {incident['severity'].upper()} incident: {subject}"
+    title = f"[VEAS] {verb} {incident['severity'].upper()} incident: {subject}"
     lines = [
         f"Score: {incident['score']} ({incident['severity']})",
         f"Device: {subject} (IP {incident.get('ip') or '-'}, MAC {incident.get('mac') or '-'})",

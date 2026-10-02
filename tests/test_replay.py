@@ -12,8 +12,8 @@ from scapy.layers.dhcp import BOOTP, DHCP
 from scapy.layers.dns import DNS, DNSQR, DNSRR
 from scapy.layers.llmnr import LLMNRQuery, LLMNRResponse
 
-from moniwifi.detectors import DetectionSettings
-from moniwifi.replay import analyse, infer_network, main
+from veas.detectors import DetectionSettings
+from veas.replay import analyse, infer_network, main
 from tests.test_protocols import client_hello
 
 GATEWAY_MAC = "00:11:22:33:44:55"
@@ -137,7 +137,7 @@ class ReplayTests(unittest.TestCase):
         with open(path) as handle:
             events = [json.loads(line) for line in handle]
         datasets = {event["event"]["dataset"] for event in events}
-        self.assertEqual(datasets, {"wifi_guardian.alert", "wifi_guardian.incident"})
+        self.assertEqual(datasets, {"veas.alert", "veas.incident"})
         spoof = next(event for event in events if event["event"]["action"] == "arp_spoofing")
         self.assertEqual(spoof["threat"]["technique"]["id"], ["T1557.002"])
 

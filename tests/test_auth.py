@@ -4,8 +4,8 @@ from unittest import mock
 from werkzeug.security import generate_password_hash
 
 import config
-from moniwifi.application import create_app
-from moniwifi.auth import is_loopback
+from veas.application import create_app
+from veas.auth import is_loopback
 from tests.helpers import FakeNetwork
 
 PASSWORD = "correct horse battery"
@@ -39,6 +39,13 @@ class AuthTests(unittest.TestCase):
         self.assertIn("/login", response.headers["Location"])
         health = self.client.get("/api/health")
         self.assertEqual(set(health.get_json()), {"status"})
+
+    def test_logo_is_public_for_the_login_page(self):
+        response = self.client.get("/static/veas-mark.svg")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"<svg", response.data)
+        response.close()
+        self.assertIn(b"/static/veas-mark.svg", self.client.get("/login").data)
 
     def test_login_session_and_logout(self):
         self.assertEqual(self.login("wrong").status_code, 401)

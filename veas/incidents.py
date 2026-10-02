@@ -7,7 +7,7 @@ import time
 import uuid
 from collections import Counter
 
-from moniwifi.attack import tactics_for, techniques_for
+from veas.attack import tactics_for, techniques_for
 
 SEVERITY_WEIGHT = {"info": 1, "low": 2, "medium": 5, "high": 10, "critical": 25}
 STATUSES = ("open", "acknowledged", "closed")

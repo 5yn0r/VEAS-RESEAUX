@@ -2,7 +2,7 @@ import threading
 import time
 import unittest
 
-from moniwifi.supervisor import ThreadSupervisor
+from veas.supervisor import ThreadSupervisor
 
 
 def wait_until(predicate, timeout=2.0):

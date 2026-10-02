@@ -3,9 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from moniwifi.detectors import DetectionEngine, DetectionSettings, SlidingDistinct, shannon_entropy
-from moniwifi.state import MonitorState
-from moniwifi.threatintel import ThreatIntel, parse_indicators
+from veas.detectors import DetectionEngine, DetectionSettings, SlidingDistinct, shannon_entropy
+from veas.state import MonitorState
+from veas.threatintel import ThreatIntel, parse_indicators
 from tests.helpers import FakeNetwork
 
 

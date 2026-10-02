@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="VEAS">
+  <defs>
+    <linearGradient id="veas-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22b386"/>
+      <stop offset="1" stop-color="#0c5641"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#veas-bg)"/>
+  <!-- Mesh behind the V: the network seen as a whole -->
+  <path d="M15 17 L32 27 L49 17" fill="none" stroke="#ffffff" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/>
+  <!-- The V of VEAS, drawn as a link between three nodes -->
+  <path d="M15 17 L32 47 L49 17" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="27" r="3" fill="#ffffff" fill-opacity=".85"/>
+  <g fill="#ffffff">
+    <circle cx="15" cy="17" r="6"/>
+    <circle cx="49" cy="17" r="6"/>
+    <circle cx="32" cy="47" r="6"/>
+  </g>
+  <g fill="#0f6b50">
+    <circle cx="15" cy="17" r="2.4"/>
+    <circle cx="49" cy="17" r="2.4"/>
+    <circle cx="32" cy="47" r="2.4"/>
+  </g>
+</svg>

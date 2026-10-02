@@ -1,8 +1,8 @@
 import unittest
 
-from moniwifi.devices import DeviceRegistry
-from moniwifi.dnslog import DomainTracker
-from moniwifi.flows import FlowTable
+from veas.devices import DeviceRegistry
+from veas.dnslog import DomainTracker
+from veas.flows import FlowTable
 
 
 class DeviceRegistryTests(unittest.TestCase):

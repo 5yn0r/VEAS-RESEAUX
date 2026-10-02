@@ -23,7 +23,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-PRODUCT = "WiFi Guardian"
+PRODUCT = "VEAS RESEAUX"
 VENDOR = "VEAS"
 VERSION = "1.0"
 # 0-100 for ECS event.severity, 0-10 for CEF, syslog severity codes (RFC 5424).
@@ -63,8 +63,8 @@ def alert_to_ecs(alert: dict, host: str) -> dict:
             "kind": "alert",
             "category": ["network", "intrusion_detection"],
             "type": ["info"],
-            "module": "wifi_guardian",
-            "dataset": "wifi_guardian.alert",
+            "module": "veas",
+            "dataset": "veas.alert",
             "action": alert["type"],
             "id": alert["id"],
             "severity": SEVERITY_SCORE.get(alert["severity"], 50),
@@ -73,7 +73,7 @@ def alert_to_ecs(alert: dict, host: str) -> dict:
         "log": {"level": alert["severity"]},
         "observer": {"vendor": VENDOR, "product": PRODUCT, "type": "ids", "hostname": host},
         "threat": _threat(alert.get("mitre") or []),
-        "wifi_guardian": {"severity": alert["severity"], "evidence": evidence},
+        "veas": {"severity": alert["severity"], "evidence": evidence},
     }
     if alert.get("source_ip"):
         event["source"] = {"ip": alert["source_ip"]}
@@ -92,8 +92,8 @@ def incident_to_ecs(incident: dict, event_name: str, host: str) -> dict:
             "kind": "alert",
             "category": ["intrusion_detection"],
             "type": ["info"],
-            "module": "wifi_guardian",
-            "dataset": "wifi_guardian.incident",
+            "module": "veas",
+            "dataset": "veas.incident",
             "action": f"incident_{event_name}",
             "id": incident["id"],
             "severity": SEVERITY_SCORE.get(incident["severity"], 50),
@@ -103,7 +103,7 @@ def incident_to_ecs(incident: dict, event_name: str, host: str) -> dict:
         "observer": {"vendor": VENDOR, "product": PRODUCT, "type": "ids", "hostname": host},
         "host": {"ip": [incident["ip"]] if incident.get("ip") else [], "mac": [incident["mac"]] if incident.get("mac") else []},
         "threat": {"framework": "MITRE ATT&CK", "technique": {"id": incident.get("mitre_techniques", [])}, "tactic": {"name": incident.get("mitre_tactics", [])}},
-        "wifi_guardian": {
+        "veas": {
             "severity": incident["severity"],
             "status": incident["status"],
             "alert_types": incident.get("alert_types", {}),
@@ -170,7 +170,7 @@ class SyslogSink:
         else:
             body = json.dumps(record["ecs"], separators=(",", ":"), default=str)
         timestamp = record["ecs"]["@timestamp"]
-        message = f"<{priority}>1 {timestamp} {self.hostname} wifi-guardian - {record['kind']} - {body}"
+        message = f"<{priority}>1 {timestamp} {self.hostname} veas-reseaux - {record['kind']} - {body}"
         if self.protocol == "tcp":
             # RFC 6587 octet counting keeps multi-line-safe framing over TCP.
             encoded = message.encode()

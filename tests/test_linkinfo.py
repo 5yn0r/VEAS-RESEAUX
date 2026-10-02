@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from moniwifi import linkinfo
-from moniwifi.linkinfo import (
+from veas import linkinfo
+from veas.linkinfo import (
     NetworkInfo,
     arp_lookup,
     channel_from_frequency,

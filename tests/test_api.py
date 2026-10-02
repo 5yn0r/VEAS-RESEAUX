@@ -4,8 +4,8 @@ import unittest
 from unittest import mock
 
 import config
-from moniwifi.alerts import make_alert
-from moniwifi.application import create_app
+from veas.alerts import make_alert
+from veas.application import create_app
 from tests.helpers import FakeNetwork
 
 
@@ -44,7 +44,7 @@ class ApiTests(unittest.TestCase):
         self.assertIn("aa:bb:cc:00:00:01", self.client.get("/api/devices/known").get_json())
 
     def test_network_endpoint(self):
-        with mock.patch("moniwifi.linkinfo.NetworkInfo.collect", return_value={"connected": True, "interface": {"name": "eth0"}}) as collect:
+        with mock.patch("veas.linkinfo.NetworkInfo.collect", return_value={"connected": True, "interface": {"name": "eth0"}}) as collect:
             response = self.client.get("/api/network")
         self.assertEqual(response.get_json()["interface"]["name"], "eth0")
         collect.assert_called_once_with("eth0", "192.168.1.1")
@@ -144,7 +144,7 @@ class ApiTests(unittest.TestCase):
         self.monitor.observe_device("aa:bb:cc:00:00:01", "192.168.1.5", "scan")
         response = self.client.get("/api/export/alerts")
         self.assertEqual(response.mimetype, "text/csv")
-        self.assertIn("attachment; filename=\"wifi-guardian-alerts-", response.headers["Content-Disposition"])
+        self.assertIn("attachment; filename=\"veas-reseaux-alerts-", response.headers["Content-Disposition"])
         text = response.get_data(as_text=True)
         self.assertIn('"exported, with comma"', text)
         self.assertIn('"{""ports"": [1, 2]}"', text)
@@ -160,7 +160,7 @@ class ApiTests(unittest.TestCase):
 class PersistenceReloadTests(unittest.TestCase):
     def test_incidents_allowlist_and_baselines_survive_restart(self):
         with tempfile.TemporaryDirectory() as directory, mock.patch.object(config, "NEW_DEVICE_LEARNING_PERIOD", 0):
-            path = os.path.join(directory, "guardian.db")
+            path = os.path.join(directory, "veas.db")
             app, _, monitor = create_app(db_path=path, network=FakeNetwork())
             client = app.test_client()
             client.post("/api/allowlist", json={"domain": "vendor.example"})

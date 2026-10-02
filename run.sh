@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "WiFi Guardian - Demarrage"
+echo "VEAS RÉSEAUX - Demarrage"
 
 # Vérifier le venv
 if [ ! -d "venv" ]; then
@@ -20,10 +20,10 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Gunicorn keeps the dashboard server separate from the development server.
-echo "Demarrage de WiFi Guardian..."
+echo "Demarrage de VEAS RÉSEAUX..."
 exec ./venv/bin/gunicorn \
     --worker-class gthread \
     --threads 100 \
     --workers 1 \
     --bind "${HOST:-127.0.0.1}:${PORT:-5000}" \
-    moniwifi.wsgi:app
+    veas.wsgi:app

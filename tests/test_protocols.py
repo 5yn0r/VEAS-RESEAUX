@@ -7,8 +7,8 @@ from scapy.layers.tls.extensions import ServerName, TLS_Ext_ServerName, TLS_Ext_
 from scapy.layers.tls.handshake import TLSClientHello
 from scapy.layers.tls.record import TLS
 
-from moniwifi import protocols
-from moniwifi.oui import OuiDatabase, is_randomized
+from veas import protocols
+from veas.oui import OuiDatabase, is_randomized
 
 
 def client_hello(name: bytes) -> bytes:

@@ -9,7 +9,7 @@ import time
 from collections import Counter, deque
 from dataclasses import dataclass, field
 
-from moniwifi.alerts import make_alert
+from veas.alerts import make_alert
 
 DEFAULT_RISKY_PORTS = {21: "FTP", 23: "Telnet", 139: "NetBIOS", 445: "SMB", 3389: "RDP", 5900: "VNC"}
 BEACON_IGNORED_PORTS = {53, 123, 5353, 67, 68}

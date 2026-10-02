@@ -2,8 +2,8 @@ import os
 import tempfile
 import unittest
 
-from moniwifi.alerts import make_alert
-from moniwifi.storage import Storage
+from veas.alerts import make_alert
+from veas.storage import Storage
 
 
 class StorageTests(unittest.TestCase):
@@ -69,7 +69,7 @@ class StorageTests(unittest.TestCase):
 
     def test_file_database_persists_between_connections(self):
         with tempfile.TemporaryDirectory() as directory:
-            path = os.path.join(directory, "nested", "guardian.db")
+            path = os.path.join(directory, "nested", "veas.db")
             storage = Storage(path)
             storage.add_alerts([make_alert("port_scan", "kept")])
             storage.close()

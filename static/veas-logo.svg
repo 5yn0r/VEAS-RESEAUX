@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 96" role="img" aria-label="VEAS RÉSEAUX - Vue d'Ensemble, Analyse et Sécurité Réseaux">
+  <style>
+    .word { fill: #17201d; font: 800 52px Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; letter-spacing: 6px; }
+    .suffix { fill: #16825d; font: 700 15px Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; letter-spacing: 5px; }
+    .tag { fill: #68736e; font: 500 12.5px Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; letter-spacing: .4px; }
+    .rule { stroke: #dbe2dd; }
+    @media (prefers-color-scheme: dark) {
+      .word { fill: #f2f5f3; } .suffix { fill: #3fd19f; } .tag { fill: #a7b4ad; } .rule { stroke: #33413b; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="veas-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22b386"/>
+      <stop offset="1" stop-color="#0c5641"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(4 8) scale(1.25)">
+    <rect width="64" height="64" rx="15" fill="url(#veas-bg)"/>
+    <path d="M15 17 L32 27 L49 17" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/>
+    <path d="M15 17 L32 47 L49 17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="32" cy="27" r="3" fill="#fff" fill-opacity=".85"/>
+    <g fill="#fff"><circle cx="15" cy="17" r="6"/><circle cx="49" cy="17" r="6"/><circle cx="32" cy="47" r="6"/></g>
+    <g fill="#0f6b50"><circle cx="15" cy="17" r="2.4"/><circle cx="49" cy="17" r="2.4"/><circle cx="32" cy="47" r="2.4"/></g>
+  </g>
+  <text class="word" x="104" y="56" textLength="160" lengthAdjust="spacingAndGlyphs">VEAS</text>
+  <line class="rule" x1="282" y1="22" x2="282" y2="58" stroke-width="2"/>
+  <text class="suffix" x="298" y="45" textLength="112" lengthAdjust="spacingAndGlyphs">RÉSEAUX</text>
+  <text class="tag" x="106" y="84" textLength="304" lengthAdjust="spacingAndGlyphs">Vue d'Ensemble · Analyse · Sécurité Réseaux</text>
+</svg>

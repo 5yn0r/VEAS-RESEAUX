@@ -12,13 +12,13 @@ from flask import Flask, Response, abort, g, jsonify, render_template, request
 from flask_socketio import SocketIO
 
 import config
-from moniwifi.alerts import SEVERITIES
-from moniwifi.auth import AuthSettings, init_auth
-from moniwifi.incidents import STATUSES
-from moniwifi.linkinfo import NetworkInfo
-from moniwifi.monitor import NetworkMonitor
-from moniwifi.state import MonitorState
-from moniwifi.storage import Storage
+from veas.alerts import SEVERITIES
+from veas.auth import AuthSettings, init_auth
+from veas.incidents import STATUSES
+from veas.linkinfo import NetworkInfo
+from veas.monitor import NetworkMonitor
+from veas.state import MonitorState
+from veas.storage import Storage
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,12 @@ def create_app(db_path: str | None = None, network=None):
     project_root = Path(__file__).resolve().parent.parent
     template_dir = project_root / "templates"
 
-    app = Flask(__name__, template_folder=str(template_dir))
+    app = Flask(
+        __name__,
+        template_folder=str(template_dir),
+        static_folder=str(project_root / "static"),
+        static_url_path="/static",
+    )
     app.config["SECRET_KEY"] = config.SECRET_KEY
     socketio = SocketIO(app, cors_allowed_origins=config.CORS_ALLOWED_ORIGINS)
     init_auth(
@@ -227,7 +232,7 @@ def create_app(db_path: str | None = None, network=None):
         else:
             rows = require_storage().domains(since=since, limit=100000)
 
-        filename = f"wifi-guardian-{kind}-{datetime.now():%Y%m%d-%H%M}.{export_format}"
+        filename = f"veas-reseaux-{kind}-{datetime.now():%Y%m%d-%H%M}.{export_format}"
         body = json.dumps(rows, default=list, indent=2) if export_format == "json" else _to_csv(rows)
         return Response(
             body,
@@ -245,7 +250,7 @@ def create_app(db_path: str | None = None, network=None):
             "entity": "test",
             "ip": None,
             "mac": None,
-            "hostname": "WiFi Guardian",
+            "hostname": "VEAS RÉSEAUX",
             "status": "open",
             "severity": "high",
             "score": 0,

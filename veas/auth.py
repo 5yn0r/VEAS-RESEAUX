@@ -1,6 +1,6 @@
 """Dashboard login (session cookie) and API bearer-token authentication.
 
-Generate a password hash with:  python -m moniwifi.auth
+Generate a password hash with:  python -m veas.auth
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ class AuthSettings:
     def __init__(self, username: str = "", password_hash: str = "", password: str = "", api_token: str = "") -> None:
         self.username = username.strip()
         if password and not password_hash:
-            logger.warning("AUTH_PASSWORD is set in clear text; prefer AUTH_PASSWORD_HASH (python -m moniwifi.auth)")
+            logger.warning("AUTH_PASSWORD is set in clear text; prefer AUTH_PASSWORD_HASH (python -m veas.auth)")
             password_hash = generate_password_hash(password)
         self.password_hash = password_hash.strip()
         self.api_token = api_token.strip()
@@ -125,7 +125,8 @@ def init_auth(app, socketio, settings: AuthSettings, host: str, allow_unauthenti
     @app.before_request
     def require_login():
         g.authenticated = authenticated()
-        if request.path in PUBLIC_PATHS or g.authenticated:
+        # Static assets (logo, icon) are needed by the login page.
+        if request.path in PUBLIC_PATHS or request.path.startswith("/static/") or g.authenticated:
             # Cookie sessions must not be driven by another site; bearer tokens are not sent automatically.
             if g.authenticated and request.method not in ("GET", "HEAD", "OPTIONS") and not _token_ok(settings):
                 if not _same_origin():

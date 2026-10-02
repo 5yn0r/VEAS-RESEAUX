@@ -1,7 +1,7 @@
 .PHONY: help install run dev test hash-password clean requirements
 
 help:
-	@echo "🛡️ WiFi Guardian"
+	@echo "VEAS RÉSEAUX"
 	@echo "================="
 	@echo ""
 	@echo "Commandes disponibles:"
@@ -29,7 +29,7 @@ test:
 	@./venv/bin/python -m unittest discover -s tests -t . -v
 
 hash-password:
-	@./venv/bin/python -m moniwifi.auth
+	@./venv/bin/python -m veas.auth
 
 clean:
 	@echo "🧹 Nettoyage..."

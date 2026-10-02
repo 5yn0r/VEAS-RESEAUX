@@ -1,0 +1,2 @@
+"""VEAS RÉSEAUX package."""
+

@@ -4,11 +4,11 @@ import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from unittest import mock
 
-from moniwifi.alerts import make_alert
-from moniwifi.allowlist import Allowlist
-from moniwifi.baseline import BaselineTracker
-from moniwifi.incidents import IncidentManager, severity_for_score
-from moniwifi.notify import EmailChannel, NtfyChannel, Notifier, TelegramChannel, WebhookChannel, format_incident
+from veas.alerts import make_alert
+from veas.allowlist import Allowlist
+from veas.baseline import BaselineTracker
+from veas.incidents import IncidentManager, severity_for_score
+from veas.notify import EmailChannel, NtfyChannel, Notifier, TelegramChannel, WebhookChannel, format_incident
 
 MB = 1024 * 1024
 
@@ -242,7 +242,7 @@ class NotifierTests(unittest.TestCase):
 
     def test_format_incident(self):
         title, message = format_incident(self.incident, "escalated")
-        self.assertTrue(title.startswith("[WiFi Guardian] Escalated CRITICAL incident: laptop"))
+        self.assertTrue(title.startswith("[VEAS] Escalated CRITICAL incident: laptop"))
         self.assertIn("arp_spoofing x1", message)
         self.assertIn("Why:", message)
 

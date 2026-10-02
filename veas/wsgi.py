@@ -1,4 +1,4 @@
-from moniwifi.application import create_app
+from veas.application import create_app
 
 
 app, socketio, monitor = create_app()

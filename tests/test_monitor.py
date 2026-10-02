@@ -7,10 +7,10 @@ from scapy.layers.dhcp import BOOTP, DHCP
 from scapy.layers.dns import DNS, DNSQR, DNSRR
 
 import config
-from moniwifi.detectors import DetectionSettings
-from moniwifi.monitor import NetworkMonitor, settings_from_config
-from moniwifi.state import MonitorState
-from moniwifi.storage import Storage
+from veas.detectors import DetectionSettings
+from veas.monitor import NetworkMonitor, settings_from_config
+from veas.state import MonitorState
+from veas.storage import Storage
 from tests.helpers import FakeNetwork, FakeSocketIO
 from tests.test_protocols import client_hello
 
@@ -103,7 +103,7 @@ class ScannerTests(unittest.TestCase):
         storage = Storage(":memory:")
         monitor = make_monitor(storage=storage)
         result = mock.Mock(returncode=0, stdout=self.ARP_OUTPUT, stderr="")
-        with mock.patch("moniwifi.monitor.subprocess.run", return_value=result) as run, mock.patch.object(
+        with mock.patch("veas.monitor.subprocess.run", return_value=result) as run, mock.patch.object(
             monitor, "resolve_hostname", return_value="host"
         ):
             devices = monitor.scan_once()
@@ -119,7 +119,7 @@ class ScannerTests(unittest.TestCase):
     def test_failed_scan_is_reported(self):
         monitor = make_monitor()
         result = mock.Mock(returncode=2, stdout="", stderr="permission denied")
-        with mock.patch("moniwifi.monitor.subprocess.run", return_value=result):
+        with mock.patch("veas.monitor.subprocess.run", return_value=result):
             with self.assertRaisesRegex(RuntimeError, "permission denied"):
                 monitor.scan_once()
 

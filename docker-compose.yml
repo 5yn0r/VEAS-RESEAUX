@@ -1,7 +1,7 @@
 services:
-  wifi-guardian:
+  veas-reseaux:
     build: .
-    container_name: wifi-guardian
+    container_name: veas-reseaux
     environment:
       - DEBUG=False
       - LOG_LEVEL=INFO

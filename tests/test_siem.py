@@ -11,11 +11,11 @@ from scapy.layers.dns import DNSQR, DNSRR
 from scapy.layers.llmnr import LLMNRQuery, LLMNRResponse
 from scapy.layers.netbios import NBNSHeader, NBNSQueryResponse
 
-from moniwifi import protocols
-from moniwifi.alerts import make_alert
-from moniwifi.attack import ALERT_TECHNIQUES, TECHNIQUES, tactics_for, technique_url, techniques_for
-from moniwifi.incidents import IncidentManager
-from moniwifi.siem import JsonFileSink, SiemExporter, SyslogSink, alert_to_cef, alert_to_ecs, incident_to_ecs
+from veas import protocols
+from veas.alerts import make_alert
+from veas.attack import ALERT_TECHNIQUES, TECHNIQUES, tactics_for, technique_url, techniques_for
+from veas.incidents import IncidentManager
+from veas.siem import JsonFileSink, SiemExporter, SyslogSink, alert_to_cef, alert_to_ecs, incident_to_ecs
 from tests.test_detectors import alert_types, engine
 
 
@@ -69,13 +69,13 @@ class FormatTests(unittest.TestCase):
         manager = IncidentManager()
         incident, _ = manager.ingest(sample_alert(), {"key": "aa", "ip": "192.168.1.66"})
         event = incident_to_ecs(incident, "created", "sensor-1")
-        self.assertEqual(event["event"]["dataset"], "wifi_guardian.incident")
+        self.assertEqual(event["event"]["dataset"], "veas.incident")
         self.assertEqual(event["event"]["risk_score"], incident["score"])
         self.assertEqual(event["host"]["ip"], ["192.168.1.66"])
 
     def test_cef_escaping(self):
         cef = alert_to_cef(sample_alert())
-        self.assertTrue(cef.startswith("CEF:0|VEAS|WiFi Guardian|1.0|brute_force|"))
+        self.assertTrue(cef.startswith("CEF:0|VEAS|VEAS RESEAUX|1.0|brute_force|"))
         # Pipes are escaped in the header, equals signs in the extension.
         self.assertIn("|brute_force|192.168.1.66 opened 25 SSH connections \\| test=1|8|", cef)
         extension = cef.split("|8|", 1)[1]
@@ -143,7 +143,7 @@ class SinkTests(unittest.TestCase):
         data = receiver.wait(lambda raw: raw.count(b"CEF:0") == 2)
         length, rest = data.split(b" ", 1)
         self.assertEqual(len(rest[: int(length)]), int(length))
-        self.assertIn(b"CEF:0|VEAS|WiFi Guardian", rest)
+        self.assertIn(b"CEF:0|VEAS|VEAS RESEAUX", rest)
 
     def test_invalid_syslog_settings(self):
         with self.assertRaises(ValueError):

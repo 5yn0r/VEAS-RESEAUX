@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🛡️ WiFi Guardian - Installation"
+echo "VEAS RÉSEAUX - Installation"
 echo "================================"
 
 # Vérifier Python

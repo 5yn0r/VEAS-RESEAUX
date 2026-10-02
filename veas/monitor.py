@@ -13,18 +13,18 @@ from scapy.layers.dhcp import DHCP
 from scapy.layers.dns import DNS
 
 import config
-from moniwifi.allowlist import Allowlist
-from moniwifi.baseline import BaselineTracker
-from moniwifi.detectors import DetectionEngine, DetectionSettings
-from moniwifi.incidents import IncidentManager
-from moniwifi.netinfo import NetworkContext
-from moniwifi.notify import Notifier, channels_from_config
-from moniwifi.siem import SiemExporter, sinks_from_config
-from moniwifi.oui import OuiDatabase
-from moniwifi import protocols
-from moniwifi.state import MonitorState
-from moniwifi.supervisor import ThreadSupervisor
-from moniwifi.threatintel import ThreatIntel
+from veas.allowlist import Allowlist
+from veas.baseline import BaselineTracker
+from veas.detectors import DetectionEngine, DetectionSettings
+from veas.incidents import IncidentManager
+from veas.netinfo import NetworkContext
+from veas.notify import Notifier, channels_from_config
+from veas.siem import SiemExporter, sinks_from_config
+from veas.oui import OuiDatabase
+from veas import protocols
+from veas.state import MonitorState
+from veas.supervisor import ThreadSupervisor
+from veas.threatintel import ThreatIntel
 
 logger = logging.getLogger(__name__)
 

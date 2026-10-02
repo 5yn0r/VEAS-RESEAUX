@@ -1,7 +1,7 @@
 import logging
 
 import config
-from moniwifi.application import create_app
+from veas.application import create_app
 
 logger = logging.getLogger(__name__)
 app, socketio, monitor = create_app()

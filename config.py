@@ -25,7 +25,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 CORS_ALLOWED_ORIGINS = _origins()
 
 # Authentication. Required when HOST is not a loopback address.
-# Create AUTH_PASSWORD_HASH with: python -m moniwifi.auth
+# Create AUTH_PASSWORD_HASH with: python -m veas.auth
 AUTH_USERNAME = os.getenv("AUTH_USERNAME", "")
 AUTH_PASSWORD_HASH = os.getenv("AUTH_PASSWORD_HASH", "")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "")
@@ -83,7 +83,7 @@ SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
 SMTP_PORT = _positive_int("SMTP_PORT", 587)
 SMTP_USER = os.getenv("SMTP_USER", "").strip() or None
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "") or None
-SMTP_FROM = os.getenv("SMTP_FROM", "wifi-guardian@localhost")
+SMTP_FROM = os.getenv("SMTP_FROM", "veas@localhost")
 SMTP_STARTTLS = os.getenv("SMTP_STARTTLS", "true").lower() == "true"
 NOTIFY_EMAIL_TO = [address.strip() for address in os.getenv("NOTIFY_EMAIL_TO", "").split(",") if address.strip()]
 
@@ -121,7 +121,7 @@ MAX_ACTIVE_FLOWS = _positive_int("MAX_ACTIVE_FLOWS", 20000)
 MAX_DNS_LOG = _positive_int("MAX_DNS_LOG", 2000)
 
 # Persistence. Set DB_PATH to an empty value to run purely in memory.
-DB_PATH = os.getenv("DB_PATH", "data/wifi_guardian.db").strip()
+DB_PATH = os.getenv("DB_PATH", "data/veas.db").strip()
 RETENTION_DAYS = _positive_int("RETENTION_DAYS", 30)
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
