@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101816">
+    <title>WiFi Guardian</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --canvas: #f4f6f4;
+            --surface: #ffffff;
+            --surface-soft: #eef2ee;
+            --ink: #17201d;
+            --muted: #68736e;
+            --line: #dbe2dd;
+            --nav: #101816;
+            --nav-soft: #1a2723;
+            --green: #16825d;
+            --green-soft: #e7f5ee;
+            --blue: #1d6ea8;
+            --blue-soft: #e8f2fa;
+            --amber: #b96b11;
+            --amber-soft: #fff4df;
+            --red: #c54242;
+            --red-soft: #fceaea;
+            --radius: 8px;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-width: 320px;
+            background: var(--canvas);
+            color: var(--ink);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 14px;
+            letter-spacing: 0;
+        }
+        button, input { font: inherit; }
+        button { cursor: pointer; }
+        .app-shell { min-height: 100vh; display: grid; grid-template-columns: 240px minmax(0, 1fr); }
+        .sidebar { background: var(--nav); color: #e9f0ec; padding: 22px 14px; display: flex; flex-direction: column; gap: 26px; }
+        .brand { display: flex; align-items: center; gap: 11px; padding: 0 8px; }
+        .brand-mark { width: 32px; height: 32px; display: grid; place-items: center; background: #1d9b71; color: white; border-radius: 7px; }
+        .brand-name { font-weight: 750; font-size: 16px; }
+        .brand small { display: block; margin-top: 2px; color: #91a39a; font-size: 11px; }
+        .nav-label { padding: 0 9px; color: #7f9288; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .nav-list { display: grid; gap: 4px; }
+        .nav-item { min-height: 40px; display: flex; align-items: center; gap: 11px; width: 100%; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: #b5c3bc; text-align: left; }
+        .nav-item:hover { background: var(--nav-soft); color: white; }
+        .nav-item.active { background: #234a3c; color: #ffffff; }
+        .nav-item i { width: 18px; height: 18px; }
+        .sidebar-footer { margin-top: auto; padding: 14px 9px 0; border-top: 1px solid #27352f; color: #95a79e; font-size: 12px; }
+        .connection { display: flex; align-items: center; gap: 8px; }
+        .connection-dot { width: 8px; height: 8px; border-radius: 50%; background: #91a39a; }
+        .connection-dot.online { background: #38cb88; box-shadow: 0 0 0 3px rgba(56, 203, 136, .12); }
+        .main { min-width: 0; }
+        .topbar { height: 72px; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.88); }
+        .breadcrumb { color: var(--muted); font-size: 13px; }
+        .breadcrumb strong { color: var(--ink); font-weight: 700; }
+        .top-actions { display: flex; align-items: center; gap: 12px; }
+        .network-chip { display: flex; align-items: center; gap: 7px; padding: 7px 10px; color: #3c4a44; background: var(--surface-soft); border-radius: 6px; font-size: 12px; }
+        .icon-button { display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: #45524c; }
+        .icon-button:hover { background: var(--surface-soft); color: var(--ink); }
+        .icon-button i { width: 17px; height: 17px; }
+        .icon-button.is-loading i { animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .page { max-width: 1500px; margin: 0 auto; padding: 31px 32px 48px; }
+        .view { display: none; }
+        .view.active { display: block; }
+        .page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 25px; }
+        h1, h2, h3, p { margin: 0; }
+        h1 { font-size: 25px; line-height: 1.25; font-weight: 750; }
+        h2 { font-size: 16px; font-weight: 720; }
+        h3 { font-size: 13px; font-weight: 700; }
+        .page-heading p { margin-top: 7px; color: var(--muted); }
+        .status-tag { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; background: var(--green-soft); color: #176247; border-radius: 6px; font-size: 12px; font-weight: 650; white-space: nowrap; }
+        .status-tag .dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
+        .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 22px; }
+        .metric { min-height: 122px; padding: 17px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+        .metric-top { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 12px; }
+        .metric-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; }
+        .metric-icon i { width: 16px; height: 16px; }
+        .metric-icon.green { background: var(--green-soft); color: var(--green); }
+        .metric-icon.blue { background: var(--blue-soft); color: var(--blue); }
+        .metric-icon.amber { background: var(--amber-soft); color: var(--amber); }
+        .metric-icon.red { background: var(--red-soft); color: var(--red); }
+        .metric-value { margin-top: 17px; font-size: 25px; font-weight: 750; }
+        .metric-foot { margin-top: 5px; color: var(--muted); font-size: 12px; }
+        .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .9fr); gap: 18px; }
+        .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+        .panel-head { min-height: 58px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; gap: 15px; border-bottom: 1px solid var(--line); }
+        .panel-title { display: flex; align-items: center; gap: 10px; }
+        .panel-title i { width: 17px; height: 17px; color: var(--green); }
+        .panel-note, .table-count { color: var(--muted); font-size: 12px; }
+        .panel-body { padding: 18px; }
+        .chart-summary { display: flex; gap: 18px; margin-bottom: 16px; color: var(--muted); font-size: 12px; }
+        .legend { display: flex; align-items: center; gap: 7px; }
+        .legend i { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+        .legend.download i { background: var(--green); }
+        .chart-wrap { height: 250px; }
+        #trafficChart { width: 100%; height: 100%; overflow: visible; }
+        .chart-grid line { stroke: #e8eeea; stroke-width: 1; }
+        .chart-line-upload, .chart-line-download { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+        .chart-line-upload { stroke: var(--blue); }
+        .chart-line-download { stroke: var(--green); }
+        .alert-list { display: grid; gap: 10px; }
+        .alert-item { padding: 12px; border: 1px solid #f0d5d5; border-left: 3px solid var(--red); border-radius: 5px; background: #fffafb; }
+        .alert-item.warning { border-color: #f0dfbd; border-left-color: var(--amber); background: #fffcf7; }
+        .alert-item.info { border-color: #cfe1ef; border-left-color: var(--blue); background: #f8fbfe; }
+        .device-row { cursor: pointer; }
+        .device-row:hover td { background: var(--surface-soft); }
+        .drawer-backdrop { position: fixed; inset: 0; background: rgba(16, 24, 22, .35); z-index: 40; }
+        .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); overflow-y: auto; background: var(--surface); border-left: 1px solid var(--line); z-index: 50; box-shadow: -8px 0 24px rgba(0,0,0,.08); }
+        .drawer[hidden], .drawer-backdrop[hidden] { display: none; }
+        .drawer-body { padding: 16px; display: grid; gap: 18px; }
+        .drawer-body h3 { margin: 0 0 8px; font-size: 13px; }
+        .kv { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; font-size: 12px; }
+        .kv span:nth-child(odd) { color: var(--muted); }
+        .kv span { overflow-wrap: anywhere; }
+        .mini-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 12px; }
+        .mini-list li { padding: 6px 8px; border-radius: 5px; background: var(--surface-soft); overflow-wrap: anywhere; }
+        .mitre-line { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+        .mitre-tag { padding: 2px 6px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: #34443c; font-size: 10px; font-weight: 650; text-decoration: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .mitre-tag.technique { color: var(--blue); }
+        a.mitre-tag:hover { border-color: var(--blue); color: var(--blue); }
+        .netinfo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+        .netinfo-grid .panel-body { padding: 14px 16px; }
+        .netinfo-grid .kv { grid-template-columns: 170px 1fr; font-size: 13px; }
+        .net-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 22px; }
+        .signal-bar { height: 6px; margin-top: 8px; border-radius: 3px; background: var(--surface-soft); overflow: hidden; }
+        .signal-bar span { display: block; height: 100%; width: 0; background: var(--green); transition: width .3s; }
+        @media (max-width: 900px) { .netinfo-grid { grid-template-columns: 1fr; } .netinfo-grid .kv { grid-template-columns: 130px 1fr; } }
+        .muted-line { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 500; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .alert-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .severity { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--red); background: var(--red-soft); }
+        .severity.medium { color: var(--amber); background: var(--amber-soft); }
+        .severity.low, .severity.info { color: var(--blue); background: var(--blue-soft); }
+        .health-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 12px; font-weight: 650; }
+        .health-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+        .health-chip.ok .dot { background: var(--green); }
+        .health-chip.degraded .dot { background: var(--red); }
+        .alert-item strong { display: block; font-size: 12px; }
+        .alert-item p { margin-top: 5px; color: #59635e; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+        .alert-time { display: block; margin-top: 7px; color: #89938e; font-size: 11px; }
+        .empty { display: grid; min-height: 150px; place-items: center; align-content: center; gap: 9px; padding: 24px; color: var(--muted); text-align: center; }
+        .empty i { width: 24px; height: 24px; color: #8a9b92; }
+        .empty p { max-width: 280px; font-size: 12px; line-height: 1.5; }
+        .table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+        .search { position: relative; width: min(300px, 100%); }
+        .search i { position: absolute; top: 10px; left: 11px; width: 16px; height: 16px; color: #829087; }
+        .search input { width: 100%; height: 37px; padding: 0 11px 0 34px; border: 1px solid var(--line); border-radius: 6px; outline: none; background: white; color: var(--ink); }
+        .search input:focus { border-color: #5ca58a; box-shadow: 0 0 0 3px rgba(22,130,93,.1); }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { height: 42px; color: var(--muted); background: #f8faf8; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 700; text-align: left; text-transform: uppercase; }
+        th, td { padding: 0 16px; white-space: nowrap; }
+        td { height: 55px; border-bottom: 1px solid #edf1ee; font-size: 13px; }
+        tbody tr:last-child td { border-bottom: 0; }
+        tbody tr:hover { background: #f9fbf9; }
+        code { color: #245e8a; background: #edf5fa; padding: 3px 5px; border-radius: 4px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; }
+        .device-name { font-weight: 650; }
+        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 7px; border-radius: 5px; font-size: 11px; font-weight: 650; color: var(--muted); background: var(--surface-soft); }
+        .badge.online { color: #176247; background: var(--green-soft); }
+        .badge .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+        .view-toolbar { display: flex; align-items: center; gap: 10px; }
+        .button { height: 36px; padding: 0 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: #34443c; font-size: 12px; font-weight: 650; }
+        .button:hover { background: var(--surface-soft); }
+        .button i { width: 15px; height: 15px; }
+        .traffic-bar { width: 120px; height: 5px; overflow: hidden; background: #e8eeea; border-radius: 4px; }
+        .traffic-bar span { display: block; height: 100%; background: var(--blue); border-radius: inherit; }
+        .analysis-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(290px, .8fr); gap: 18px; }
+        .capture-area { min-height: 340px; display: grid; place-items: center; padding: 32px; background: #fbfcfb; }
+        .capture-placeholder { max-width: 380px; text-align: center; }
+        .capture-icon { margin: 0 auto 14px; display: grid; place-items: center; width: 48px; height: 48px; color: var(--blue); background: var(--blue-soft); border-radius: 7px; }
+        .capture-icon i { width: 25px; height: 25px; }
+        .capture-placeholder p { margin-top: 9px; color: var(--muted); line-height: 1.55; }
+        .capture-fields { display: grid; gap: 1px; background: var(--line); }
+        .capture-field { display: flex; justify-content: space-between; gap: 12px; padding: 12px 15px; background: white; color: var(--muted); font-size: 12px; }
+        .capture-field strong { color: var(--ink); font-weight: 650; text-align: right; }
+        .packet-filters { display: grid; grid-template-columns: minmax(150px, 1.5fr) minmax(110px, .7fr) minmax(120px, .7fr) minmax(90px, .45fr) auto; gap: 9px; margin-bottom: 16px; }
+        .field-control { height: 37px; min-width: 0; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; outline: none; background: white; color: var(--ink); }
+        .field-control:focus { border-color: #5ca58a; box-shadow: 0 0 0 3px rgba(22,130,93,.1); }
+        .packet-direction { color: var(--muted); font-size: 12px; font-weight: 650; text-transform: capitalize; }
+        .protocol { display: inline-flex; min-width: 42px; justify-content: center; padding: 4px 6px; border-radius: 4px; background: var(--blue-soft); color: var(--blue); font-size: 11px; font-weight: 750; }
+        .protocol.udp { color: #7a4d13; background: var(--amber-soft); }
+        .protocol.icmp { color: #6b538f; background: #f0eafd; }
+        @media (max-width: 960px) {
+            .app-shell { grid-template-columns: 68px minmax(0, 1fr); }
+            .sidebar { padding: 18px 10px; }
+            .brand { justify-content: center; padding: 0; }
+            .brand-copy, .nav-label, .nav-item span, .sidebar-footer { display: none; }
+            .nav-item { justify-content: center; padding: 0; }
+            .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .dashboard-grid, .analysis-layout { grid-template-columns: 1fr; }
+            .packet-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 620px) {
+            .app-shell { display: block; }
+            .sidebar { position: sticky; top: 0; z-index: 4; min-height: 60px; padding: 10px 12px; flex-direction: row; align-items: center; gap: 12px; overflow-x: auto; }
+            .brand { flex: 0 0 auto; }
+            .nav-list { display: flex; gap: 3px; }
+            .nav-item { width: 38px; min-width: 38px; min-height: 38px; }
+            .topbar { height: 58px; padding: 0 16px; }
+            .network-chip { display: none; }
+            .page { padding: 22px 16px 36px; }
+            .page-heading { margin-bottom: 19px; }
+            h1 { font-size: 21px; }
+            .metrics { gap: 9px; margin-bottom: 14px; }
+            .metric { min-height: 104px; padding: 13px; }
+            .metric-value { margin-top: 12px; font-size: 20px; }
+            .metric-foot { font-size: 11px; }
+            .panel-body { padding: 14px; }
+            .table-toolbar { align-items: stretch; flex-direction: column; }
+            .search { width: 100%; }
+            .view-toolbar .button span { display: none; }
+            .chart-wrap { height: 190px; }
+            .packet-filters { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark"><i data-lucide="shield-check"></i></div>
+                <div class="brand-copy"><div class="brand-name">WiFi Guardian</div><small>Network observability</small></div>
+            </div>
+            <div>
+                <div class="nav-label">Surveillance</div>
+                <nav class="nav-list" aria-label="Navigation principale">
+                    <button class="nav-item active" data-view-target="overview" type="button" title="Vue d'ensemble"><i data-lucide="layout-dashboard"></i><span>Vue d'ensemble</span></button>
+                    <button class="nav-item" data-view-target="network" type="button" title="Mon reseau"><i data-lucide="wifi"></i><span>Mon reseau</span></button>
+                    <button class="nav-item" data-view-target="devices" type="button" title="Appareils"><i data-lucide="monitor-smartphone"></i><span>Appareils</span></button>
+                    <button class="nav-item" data-view-target="traffic" type="button" title="Trafic"><i data-lucide="arrow-left-right"></i><span>Trafic</span></button>
+                    <button class="nav-item" data-view-target="connections" type="button" title="Connexions"><i data-lucide="waypoints"></i><span>Connexions</span></button>
+                    <button class="nav-item" data-view-target="analysis" type="button" title="Analyse de paquets"><i data-lucide="scan-search"></i><span>Analyse de paquets</span></button>
+                    <button class="nav-item" data-view-target="incidents" type="button" title="Incidents"><i data-lucide="siren"></i><span>Incidents</span></button>
+                    <button class="nav-item" data-view-target="alerts" type="button" title="Alertes"><i data-lucide="shield-alert"></i><span>Alertes</span></button>
+                </nav>
+            </div>
+            <div class="sidebar-footer"><div class="connection"><span class="connection-dot" id="connection-dot"></span><span id="connection-label">Connexion...</span></div></div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div class="breadcrumb"><strong id="breadcrumb-title">Vue d'ensemble</strong><span> / WiFi Guardian</span></div>
+                <div class="top-actions">
+                    <div class="health-chip" id="health-chip" title="Etat du moniteur"><span class="dot"></span><span id="health-label">Sante inconnue</span></div>
+                    <div class="network-chip"><i data-lucide="wifi"></i><span id="network-name">Reseau local</span></div>
+                    <button class="icon-button" id="refresh-button" type="button" title="Actualiser les donnees"><i data-lucide="refresh-cw"></i></button>
+                    {% if auth_enabled %}<form method="post" action="/logout" style="margin:0"><button class="icon-button" type="submit" title="Se deconnecter"><i data-lucide="log-out"></i></button></form>{% endif %}
+                </div>
+            </header>
+
+            <div class="page">
+                <section class="view active" data-view="overview">
+                    <div class="page-heading"><div><h1>Vue d'ensemble</h1><p>Activite du reseau local et alertes recentes.</p></div><span class="status-tag"><span class="dot"></span><span id="realtime-status">Initialisation</span></span></div>
+                    <div class="metrics">
+                        <article class="metric"><div class="metric-top"><span>Appareils actifs</span><span class="metric-icon green"><i data-lucide="laptop"></i></span></div><div class="metric-value" id="device-count">0</div><div class="metric-foot">Dernier scan reseau</div></article>
+                        <article class="metric"><div class="metric-top"><span>Debit actuel</span><span class="metric-icon blue"><i data-lucide="activity"></i></span></div><div class="metric-value" id="total-rate">0 b/s</div><div class="metric-foot">Upload et download</div></article>
+                        <article class="metric"><div class="metric-top"><span>Alertes</span><span class="metric-icon amber"><i data-lucide="triangle-alert"></i></span></div><div class="metric-value" id="alert-count">0</div><div class="metric-foot" id="incident-foot">Alertes retenues</div></article>
+                        <article class="metric"><div class="metric-top"><span>Trafic observe</span><span class="metric-icon red"><i data-lucide="database"></i></span></div><div class="metric-value" id="traffic-total">0 B</div><div class="metric-foot">Depuis le demarrage</div></article>
+                    </div>
+                    <div class="dashboard-grid">
+                        <section class="panel"><div class="panel-head"><div class="panel-title"><i data-lucide="chart-no-axes-combined"></i><h2>Trafic en direct</h2></div><span class="panel-note" id="last-update">En attente</span></div><div class="panel-body"><div class="chart-summary"><span class="legend"><i></i>Upload <strong id="upload-rate">0 b/s</strong></span><span class="legend download"><i></i>Download <strong id="download-rate">0 b/s</strong></span></div><div class="chart-wrap"><svg id="trafficChart" viewBox="0 0 760 260" preserveAspectRatio="none"><g class="chart-grid"><line x1="0" y1="20" x2="760" y2="20"></line><line x1="0" y1="80" x2="760" y2="80"></line><line x1="0" y1="140" x2="760" y2="140"></line><line x1="0" y1="200" x2="760" y2="200"></line><line x1="0" y1="259" x2="760" y2="259"></line></g><polyline id="uploadLine" class="chart-line-upload" points=""></polyline><polyline id="downloadLine" class="chart-line-download" points=""></polyline></svg></div></div></section>
+                        <section class="panel"><div class="panel-head"><div class="panel-title"><i data-lucide="shield-alert"></i><h2>Alertes recentes</h2></div><button class="icon-button" data-view-target="alerts" type="button" title="Voir toutes les alertes"><i data-lucide="arrow-up-right"></i></button></div><div class="panel-body"><div class="alert-list" id="overview-alerts"></div></div></section>
+                    </div>
+                </section>
+
+                <section class="view" data-view="devices">
+                    <div class="page-heading"><div><h1>Appareils</h1><p>Appareils vus recemment par scan ARP, DHCP, mDNS ou trafic observe.</p></div><div class="view-toolbar"><button class="button" id="devices-refresh" type="button"><i data-lucide="refresh-cw"></i><span>Actualiser</span></button></div></div>
+                    <section class="panel"><div class="panel-head"><div class="panel-title"><i data-lucide="network"></i><h2>Inventaire reseau</h2></div><div style="display:flex;gap:8px;align-items:center"><span class="table-count" id="devices-table-count">0 appareil</span><a class="button" href="/api/export/devices?format=csv" download>Exporter CSV</a></div></div><div class="panel-body"><div class="table-toolbar"><div class="search"><i data-lucide="search"></i><input id="device-search" type="search" autocomplete="off" placeholder="Rechercher IP, nom ou fabricant"></div></div><div class="table-scroll"><table><thead><tr><th>Appareil</th><th>Adresse IP</th><th>Fabricant</th><th>Sources</th><th>Vu</th></tr></thead><tbody id="device-tbody"></tbody></table></div></div></section>
+                </section>
+
+                <section class="view" data-view="traffic">
+                    <div class="page-heading"><div><h1>Trafic</h1><p>Volumes cumules par adresse IP locale.</p></div><span class="status-tag"><span class="dot"></span>Temps reel</span></div>
+                    <section class="panel"><div class="panel-head"><div class="panel-title"><i data-lucide="arrow-down-up"></i><h2>Adresses les plus actives</h2></div><span class="table-count" id="traffic-table-count">0 adresse</span></div><div class="table-scroll"><table><thead><tr><th>Adresse IP</th><th>Upload</th><th>Download</th><th>Connexions</th><th>Activite</th></tr></thead><tbody id="traffic-tbody"></tbody></table></div></section>
+                </section>
+
+                <section class="view" data-view="network">
+                    <div class="page-heading"><div><h1>Mon reseau</h1><p>Connexion actuelle de cette machine : adressage, passerelle, lien Wi-Fi et debit.</p></div><span class="status-tag"><span class="dot"></span><span id="network-updated">En attente</span></span></div>
+                    <div class="metrics">
+                        <article class="metric"><div class="metric-top"><span>Reseau</span><span class="metric-icon green"><i data-lucide="wifi"></i></span></div><div class="metric-value net-ellipsis" id="net-ssid">-</div><div class="metric-foot" id="net-ssid-foot">-</div></article>
+                        <article class="metric"><div class="metric-top"><span>Signal</span><span class="metric-icon blue"><i data-lucide="signal"></i></span></div><div class="metric-value" id="net-signal">-</div><div class="signal-bar"><span id="net-signal-bar"></span></div><div class="metric-foot" id="net-signal-foot">-</div></article>
+                        <article class="metric"><div class="metric-top"><span>Debit actuel</span><span class="metric-icon amber"><i data-lucide="arrow-down-up"></i></span></div><div class="metric-value" id="net-rate">-</div><div class="metric-foot" id="net-rate-foot">-</div></article>
+                        <article class="metric"><div class="metric-top"><span>Bande passante du lien</span><span class="metric-icon red"><i data-lucide="gauge"></i></span></div><div class="metric-value" id="net-capacity">-</div><div class="metric-foot" id="net-capacity-foot">-</div></article>
+                    </div>
+                    <div class="netinfo-grid" id="netinfo-grid"></div>
+                </section>
+
+                <section class="view" data-view="connections">
+                    <div class="page-heading"><div><h1>Connexions</h1><p>Flux agreges par connexion et requetes DNS des appareils locaux.</p></div><div class="view-toolbar"><div class="search"><i data-lucide="search"></i><input id="connection-ip-filter" type="search" autocomplete="off" placeholder="Filtrer par IP"></div></div></div>
+                    <section class="panel"><div class="panel-head"><div class="panel-title"><i data-lucide="waypoints"></i><h2>Flux reseau</h2></div><span class="table-count" id="flow-table-count">0 flux</span></div><div class="table-scroll"><table><thead><tr><th>Client</th><th>Serveur</th><th>Service</th><th>Proto</th><th>Envoye</th><th>Recu</th><th>Etat</th></tr></thead><tbody id="flow-tbody"></tbody></table></div></section>
+                    <section class="panel" style="margin-top:16px"><div class="panel-head"><div class="panel-title"><i data-lucide="globe"></i><h2>Requetes DNS</h2></div><span class="table-count" id="dns-table-count">0 requete</span></div><div class="table-scroll"><table><thead><tr><th>Heure</th><th>Client</th><th>Domaine</th><th>Type</th><th>Reponses</th></tr></thead><tbody id="dns-tbody"></tbody></table></div></section>
+                </section>
+
+                <section class="view" data-view="analysis">
+                    <div class="page-heading"><div><h1>Analyse de paquets</h1><p>Metadonnees recentes uniquement. Le contenu des paquets n'est jamais conserve.</p></div><span class="status-tag"><span class="dot"></span>Capture active</span></div>
+                    <div class="analysis-layout"><section class="panel"><div class="panel-head"><div class="panel-title"><i data-lucide="scan-search"></i><h2>Flux de paquets</h2></div><span class="panel-note" id="packet-table-count">0 paquet</span></div><div class="panel-body"><form class="packet-filters" id="packet-filter-form"><input class="field-control" id="packet-ip-filter" type="search" placeholder="IP source ou destination"><select class="field-control" id="packet-protocol-filter"><option value="">Tous protocoles</option><option value="TCP">TCP</option><option value="UDP">UDP</option><option value="ICMP">ICMP</option><option value="IP">IP</option></select><select class="field-control" id="packet-direction-filter"><option value="">Tous les sens</option><option value="inbound">Entrant</option><option value="outbound">Sortant</option><option value="local">Local</option></select><input class="field-control" id="packet-port-filter" type="number" min="1" max="65535" placeholder="Port"><button class="button" type="submit"><i data-lucide="filter"></i><span>Filtrer</span></button></form><div class="table-scroll"><table><thead><tr><th>Heure</th><th>Sens</th><th>Protocole</th><th>Source</th><th>Destination</th><th>Taille</th><th>Flags</th></tr></thead><tbody id="packet-tbody"></tbody></table></div></div></section><aside class="panel"><div class="panel-head"><div class="panel-title"><i data-lucide="chart-pie"></i><h2>Resume</h2></div></div><div class="capture-fields"><div class="capture-field"><span>Paquets retenus</span><strong id="packet-summary-count">0</strong></div><div class="capture-field"><span>TCP</span><strong id="packet-summary-tcp">0</strong></div><div class="capture-field"><span>UDP</span><strong id="packet-summary-udp">0</strong></div><div class="capture-field"><span>Entrants</span><strong id="packet-summary-inbound">0</strong></div><div class="capture-field"><span>Sortants</span><strong id="packet-summary-outbound">0</strong></div><div class="capture-field"><span>Donnees stockees</span><strong>Metadonnees</strong></div></div></aside></div>
+                </section>
+
+                <section class="view" data-view="incidents">
+                    <div class="page-heading"><div><h1>Incidents</h1><p>Alertes regroupees par appareil et notees selon leur gravite et leurs enchainements.</p></div><div class="view-toolbar"><select class="field-control" id="incident-status-filter"><option value="">Tous</option><option value="open" selected>Ouverts</option><option value="acknowledged">Acquittes</option><option value="closed">Fermes</option></select></div></div>
+                    <section class="panel"><div class="panel-head"><div class="panel-title"><i data-lucide="siren"></i><h2>Incidents</h2></div><span class="table-count" id="incident-count">0 incident</span></div><div class="panel-body"><div class="alert-list" id="incident-list"></div></div></section>
+                </section>
+
+                <section class="view" data-view="alerts">
+                    <div class="page-heading"><div><h1>Alertes</h1><p>Evenements de securite detectes sur le reseau observe.</p></div><span class="status-tag"><span class="dot"></span>Surveillance active</span></div>
+                    <section class="panel"><div class="panel-head"><div class="panel-title"><i data-lucide="bell-ring"></i><h2>Journal des alertes</h2></div><div style="display:flex;gap:8px;align-items:center"><span class="table-count" id="alerts-table-count">0 alerte</span><a class="button" href="/api/export/alerts?format=csv&amp;hours=168" download>Exporter CSV</a></div></div><div class="panel-body"><div class="alert-list" id="all-alerts"></div></div></section>
+                </section>
+            </div>
+        </main>
+    </div>
+    <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+    <aside class="drawer" id="device-drawer" aria-label="Fiche appareil" hidden>
+        <div class="panel-head"><div class="panel-title"><h2 id="drawer-title">Appareil</h2></div><button class="icon-button" id="drawer-close" type="button" title="Fermer">&times;</button></div>
+        <div class="drawer-body" id="drawer-body"></div>
+    </aside>
+
+    <script>
+        const maxHistory = 60;
+        const state = { devices: {}, alerts: [], traffic: [], packets: [], packetSummary: {}, chart: { upload: [], download: [] } };
+        const labels = { overview: "Vue d'ensemble", network: "Mon reseau", devices: "Appareils", traffic: "Trafic", connections: "Connexions", analysis: "Analyse de paquets", incidents: "Incidents", alerts: "Alertes" };
+        const uploadLine = document.getElementById("uploadLine");
+        const downloadLine = document.getElementById("downloadLine");
+        const supportsRealtime = typeof window.io === "function";
+        let realtimeRefreshTimer = null;
+
+        function formatRate(bytesPerSecond) {
+            const bits = bytesPerSecond * 8;
+            if (bits >= 1000000) return `${(bits / 1000000).toFixed(2)} Mb/s`;
+            if (bits >= 1000) return `${(bits / 1000).toFixed(1)} Kb/s`;
+            return `${Math.round(bits)} b/s`;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes >= 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+            if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+            if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+            return `${Math.round(bytes)} B`;
+        }
+
+        function setConnection(connected) {
+            document.getElementById("connection-dot").classList.toggle("online", connected);
+            document.getElementById("connection-label").textContent = connected ? "Connecte en direct" : "Mode API";
+            document.getElementById("realtime-status").textContent = connected ? "Temps reel" : "Mode API";
+        }
+
+        function emptyNode(message, icon = "inbox") {
+            const empty = document.createElement("div");
+            empty.className = "empty";
+            const iconNode = document.createElement("i");
+            iconNode.setAttribute("data-lucide", icon);
+            const text = document.createElement("p");
+            text.textContent = message;
+            empty.append(iconNode, text);
+            return empty;
+        }
+
+        function updateIcons() { if (window.lucide) window.lucide.createIcons(); }
+
+        const severityClass = { critical: "", high: "", medium: " warning", low: " info", info: " info" };
+        const severityLabel = { critical: "Critique", high: "Elevee", medium: "Moyenne", low: "Faible", info: "Info" };
+
+        function createAlert(alert) {
+            const severity = alert.severity || "medium";
+            const item = document.createElement("article");
+            item.className = `alert-item${severityClass[severity] ?? " warning"}`;
+            const head = document.createElement("div");
+            head.className = "alert-head";
+            const title = document.createElement("strong");
+            title.textContent = (alert.type || "alerte").replaceAll("_", " ").toUpperCase();
+            const badge = document.createElement("span");
+            badge.className = `severity ${severity}`;
+            badge.textContent = severityLabel[severity] || severity;
+            head.append(title, badge);
+            const detail = document.createElement("p");
+            detail.textContent = alert.detail || alert.message || "";
+            const time = document.createElement("span");
+            time.className = "alert-time";
+            time.textContent = alert.timestamp ? new Date(alert.timestamp * 1000).toLocaleString() : "";
+            item.append(head, detail);
+            const techniques = mitreLine(alert.mitre || []);
+            if (techniques) item.append(techniques);
+            item.append(time);
+            return item;
+        }
+
+        const statusLabel = { open: "Ouvert", acknowledged: "Acquitte", closed: "Ferme" };
+
+        function incidentButton(incident, status, label) {
+            const button = document.createElement("button");
+            button.className = "button"; button.type = "button"; button.textContent = label;
+            button.addEventListener("click", async () => {
+                button.disabled = true;
+                try {
+                    const response = await fetch(`/api/incidents/${incident.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    refreshIncidents();
+                } catch (error) { console.error("Erreur incident:", error); button.disabled = false; }
+            });
+            return button;
+        }
+
+        function renderIncidents(incidents) {
+            const list = document.getElementById("incident-list"); list.replaceChildren();
+            if (!incidents.length) list.append(emptyNode("Aucun incident pour ce filtre.", "shield-check"));
+            incidents.forEach((incident) => {
+                const item = document.createElement("article");
+                item.className = `alert-item${severityClass[incident.severity] ?? " warning"}`;
+                const head = document.createElement("div"); head.className = "alert-head";
+                const title = document.createElement("strong"); title.textContent = incident.summary;
+                const badge = document.createElement("span"); badge.className = `severity ${incident.severity}`; badge.textContent = `${severityLabel[incident.severity] || incident.severity} - score ${incident.score}`;
+                head.append(title, badge);
+                const detail = document.createElement("p");
+                detail.textContent = Object.entries(incident.alert_types || {}).map(([type, count]) => `${type.replaceAll("_", " ")} x${count}`).join(", ");
+                item.append(head, detail);
+                if ((incident.mitre_tactics || []).length) {
+                    const tactics = document.createElement("div"); tactics.className = "mitre-line";
+                    incident.mitre_tactics.forEach((tactic) => { const tag = document.createElement("span"); tag.className = "mitre-tag"; tag.textContent = tactic; tactics.append(tag); });
+                    (incident.mitre_techniques || []).forEach((id) => { const tag = document.createElement("span"); tag.className = "mitre-tag technique"; tag.textContent = id; tactics.append(tag); });
+                    item.append(tactics);
+                }
+                (incident.reasons || []).forEach((reason) => { const why = document.createElement("p"); why.textContent = `Pourquoi : ${reason}`; item.append(why); });
+                const latest = (incident.alerts || []).slice(-3).reverse();
+                latest.forEach((alert) => { const line = document.createElement("p"); line.textContent = `- ${alert.detail}`; item.append(line); });
+                const foot = document.createElement("div"); foot.className = "alert-head"; foot.style.marginTop = "8px";
+                const time = document.createElement("span"); time.className = "alert-time";
+                time.textContent = `${statusLabel[incident.status] || incident.status} - ${new Date(incident.first_seen * 1000).toLocaleString()} -> ${new Date(incident.last_seen * 1000).toLocaleTimeString()}`;
+                const actions = document.createElement("div"); actions.style.display = "flex"; actions.style.gap = "6px";
+                if (incident.status === "open") actions.append(incidentButton(incident, "acknowledged", "Acquitter"));
+                if (incident.status !== "closed") actions.append(incidentButton(incident, "closed", "Fermer"));
+                else actions.append(incidentButton(incident, "open", "Rouvrir"));
+                foot.append(time, actions); item.append(foot);
+                list.append(item);
+            });
+            document.getElementById("incident-count").textContent = `${incidents.length} incident${incidents.length === 1 ? "" : "s"}`;
+        }
+
+        async function refreshIncidents() {
+            const status = document.getElementById("incident-status-filter").value;
+            try { renderIncidents(await fetchJson(`/api/incidents?limit=100${status ? `&status=${status}` : ""}`)); }
+            catch (error) { console.error("Erreur refreshIncidents:", error); }
+        }
+
+        function kvBlock(title, pairs) {
+            const section = document.createElement("section");
+            const heading = document.createElement("h3"); heading.textContent = title;
+            const grid = document.createElement("div"); grid.className = "kv";
+            pairs.forEach(([key, value]) => { const k = document.createElement("span"); k.textContent = key; const v = document.createElement("span"); v.textContent = value ?? "-"; grid.append(k, v); });
+            section.append(heading, grid);
+            return section;
+        }
+
+        function listBlock(title, items, empty) {
+            const section = document.createElement("section");
+            const heading = document.createElement("h3"); heading.textContent = title;
+            const list = document.createElement("ul"); list.className = "mini-list";
+            if (!items.length) { const li = document.createElement("li"); li.textContent = empty; list.append(li); }
+            items.forEach((text) => { const li = document.createElement("li"); li.textContent = text; list.append(li); });
+            section.append(heading, list);
+            return section;
+        }
+
+        function closeDevice() {
+            document.getElementById("device-drawer").hidden = true;
+            document.getElementById("drawer-backdrop").hidden = true;
+        }
+
+        async function openDevice(mac) {
+            let detail;
+            try { detail = await fetchJson(`/api/devices/${encodeURIComponent(mac)}`); }
+            catch (error) { console.error("Erreur fiche appareil:", error); return; }
+            const device = detail.device;
+            document.getElementById("drawer-title").textContent = device.hostname || device.ip || mac;
+            const body = document.getElementById("drawer-body"); body.replaceChildren();
+            body.append(kvBlock("Identite", [
+                ["MAC", mac], ["Adresse IP", device.ip], ["Historique IP", (device.ip_history || []).join(", ")],
+                ["Fabricant", device.vendor], ["Nom", device.hostname ? `${device.hostname} (${device.hostname_source || "?"})` : null],
+                ["Classe DHCP", device.dhcp_vendor_class], ["Sources", (device.sources || []).join(", ")],
+                ["Premiere vue", device.first_seen ? new Date(device.first_seen * 1000).toLocaleString() : null],
+                ["Derniere vue", device.last_seen ? formatAgo(device.last_seen) : null],
+            ]));
+            const baseline = detail.baseline;
+            if (baseline) body.append(kvBlock("Profil de reference", [
+                ["Etat", baseline.learning ? "Apprentissage en cours" : "Appris"],
+                ["Envoi moyen par intervalle", formatBytes(baseline.upload_mean || 0)],
+                ["Echantillons", baseline.samples], ["Destinations connues", (baseline.destinations || []).length],
+            ]));
+            body.append(listBlock("Incidents", (detail.incidents || []).map((i) => `[${severityLabel[i.severity] || i.severity}] score ${i.score} - ${i.summary} (${statusLabel[i.status] || i.status})`), "Aucun incident."));
+            body.append(listBlock("Alertes", (detail.alerts || []).slice(-10).reverse().map((a) => `[${severityLabel[a.severity] || a.severity}] ${a.detail}`), "Aucune alerte."));
+            body.append(listBlock("Domaines contactes", (detail.domains || []).slice(0, 15).map((d) => `${d.domain} - ${d.count} fois (${d.sources.join(", ")})`), "Aucun domaine enregistre."));
+            body.append(listBlock("Flux recents", (detail.flows || []).slice(0, 15).map((f) => `${f.protocol} ${endpoint(f.server_ip, f.server_port)} ${f.server_name ? `(${f.server_name})` : ""} - ${formatBytes(f.bytes_out)} / ${formatBytes(f.bytes_in)}`), "Aucun flux."));
+            body.append(listBlock("Requetes DNS", (detail.dns || []).slice(0, 15).map((q) => `${formatPacketTime(q.timestamp)} ${q.query} (${q.type})`), "Aucune requete."));
+            document.getElementById("device-drawer").hidden = false;
+            document.getElementById("drawer-backdrop").hidden = false;
+            document.getElementById("drawer-close").focus();
+        }
+
+        function mitreLine(techniques) {
+            if (!techniques.length) return null;
+            const line = document.createElement("div"); line.className = "mitre-line";
+            techniques.forEach((technique) => {
+                const link = document.createElement("a");
+                link.className = "mitre-tag"; link.href = technique.url; link.target = "_blank"; link.rel = "noopener noreferrer";
+                link.textContent = technique.id; link.title = `${technique.name} (${technique.tactics.join(", ")})`;
+                line.append(link);
+            });
+            return line;
+        }
+
+        function netPanel(title, icon, pairs) {
+            const panel = document.createElement("section"); panel.className = "panel";
+            const head = document.createElement("div"); head.className = "panel-head";
+            const titleNode = document.createElement("div"); titleNode.className = "panel-title";
+            const iconNode = document.createElement("i"); iconNode.setAttribute("data-lucide", icon);
+            const heading = document.createElement("h2"); heading.textContent = title;
+            titleNode.append(iconNode, heading); head.append(titleNode);
+            const body = document.createElement("div"); body.className = "panel-body";
+            const grid = document.createElement("div"); grid.className = "kv";
+            pairs.filter(([, value]) => value !== undefined).forEach(([key, value]) => {
+                const k = document.createElement("span"); k.textContent = key;
+                const v = document.createElement("span"); v.textContent = value === null || value === "" ? "-" : value;
+                grid.append(k, v);
+            });
+            body.append(grid); panel.append(head, body);
+            return panel;
+        }
+
+        function formatMbps(value) { return value ? `${value >= 1000 ? (value / 1000).toFixed(1) + " Gb/s" : value + " Mb/s"}` : "-"; }
+
+        function renderNetwork(info) {
+            const grid = document.getElementById("netinfo-grid"); grid.replaceChildren();
+            document.getElementById("network-updated").textContent = `Mis a jour a ${new Date((info.timestamp || Date.now() / 1000) * 1000).toLocaleTimeString()}`;
+            if (!info.connected) {
+                grid.append(emptyNode(info.error || "Aucune connexion reseau active.", "wifi-off"));
+                updateIcons();
+                return;
+            }
+            const iface = info.interface || {}, ipv4 = info.ipv4 || {}, wifi = info.wifi || {}, gateway = info.gateway || {}, traffic = info.traffic || {}, counters = traffic.counters || {};
+            const isWifi = iface.type === "wifi";
+            document.getElementById("net-ssid").textContent = isWifi ? (wifi.ssid || "Non connecte") : "Filaire";
+            document.getElementById("net-ssid").title = document.getElementById("net-ssid").textContent;
+            document.getElementById("net-ssid-foot").textContent = isWifi ? [wifi.band, wifi.channel ? `canal ${wifi.channel}` : null, wifi.security].filter(Boolean).join(" - ") : iface.name;
+            document.getElementById("net-signal").textContent = isWifi && wifi.signal_dbm != null ? `${wifi.signal_dbm} dBm` : "-";
+            document.getElementById("net-signal-bar").style.width = `${isWifi ? wifi.signal_quality || 0 : 0}%`;
+            document.getElementById("net-signal-foot").textContent = isWifi && wifi.signal_label ? `${wifi.signal_label} (${wifi.signal_quality} %)` : "Non applicable";
+            document.getElementById("net-rate").textContent = formatRate((traffic.download_bps || 0) + (traffic.upload_bps || 0));
+            document.getElementById("net-rate-foot").textContent = `Down ${formatRate(traffic.download_bps || 0)} - Up ${formatRate(traffic.upload_bps || 0)}`;
+            document.getElementById("net-capacity").textContent = formatMbps(traffic.link_capacity_mbps);
+            document.getElementById("net-capacity-foot").textContent = traffic.utilization_percent != null ? `Utilisation ${traffic.utilization_percent} %` : "Debit negocie inconnu";
+
+            grid.append(netPanel("Interface", "network", [
+                ["Nom", iface.name], ["Type", isWifi ? "Wi-Fi" : "Ethernet"], ["Adresse MAC", iface.mac], ["Fabricant de la carte", iface.vendor],
+                ["Etat", iface.state], ["MTU", iface.mtu],
+            ]));
+            grid.append(netPanel("Adressage IPv4", "binary", info.ipv4 ? [
+                ["Adresse IP", ipv4.address], ["Masque", `${ipv4.netmask} (/${ipv4.prefix})`], ["Sous-reseau", ipv4.network],
+                ["Diffusion (broadcast)", ipv4.broadcast], ["Plage d'hotes", ipv4.host_range], ["Hotes utilisables", ipv4.usable_hosts],
+                ["Type d'adresse", ipv4.private ? "Privee (RFC 1918)" : "Publique"],
+            ] : [["Adresse IP", "Aucune adresse IPv4"]]));
+            if (isWifi) grid.append(netPanel("Point d'acces Wi-Fi", "router", [
+                ["SSID", wifi.ssid], ["BSSID", wifi.bssid], ["Fabricant du point d'acces", wifi.access_point_vendor], ["Securite", wifi.security],
+                ["Norme", wifi.standard], ["Bande", wifi.band], ["Canal", wifi.channel], ["Frequence", wifi.frequency_mhz ? `${wifi.frequency_mhz} MHz` : null],
+                ["Largeur de canal", wifi.channel_width_mhz ? `${wifi.channel_width_mhz} MHz` : null],
+                ["Debit reception", formatMbps(wifi.rx_bitrate_mbps)], ["Debit emission", formatMbps(wifi.tx_bitrate_mbps)],
+                ["Puissance d'emission", wifi.tx_power_dbm ? `${wifi.tx_power_dbm} dBm` : null],
+            ]));
+            else grid.append(netPanel("Lien Ethernet", "cable", [["Vitesse", formatMbps((info.ethernet || {}).speed_mbps)], ["Duplex", (info.ethernet || {}).duplex]]));
+            grid.append(netPanel("Passerelle et DNS", "globe", [
+                ["Passerelle", gateway.ip], ["MAC de la passerelle", gateway.mac], ["Fabricant", gateway.vendor],
+                ["Serveurs DNS", (info.dns || []).join(", ")],
+            ]));
+            grid.append(netPanel("IPv6", "binary", (info.ipv6 || []).length
+                ? info.ipv6.map((entry) => [`Adresse ${entry.scope}`, `${entry.address}/${entry.prefix ?? "?"}`])
+                : [["Adresse", "Aucune adresse IPv6"]]));
+            grid.append(netPanel("Compteurs de l'interface", "activity", [
+                ["Recu", `${formatBytes(counters.rx_bytes || 0)} (${(counters.rx_packets || 0).toLocaleString()} paquets)`],
+                ["Envoye", `${formatBytes(counters.tx_bytes || 0)} (${(counters.tx_packets || 0).toLocaleString()} paquets)`],
+                ["Erreurs (rx / tx)", `${counters.rx_errors ?? "-"} / ${counters.tx_errors ?? "-"}`],
+                ["Paquets perdus (rx / tx)", `${counters.rx_dropped ?? "-"} / ${counters.tx_dropped ?? "-"}`],
+            ]));
+            updateIcons();
+        }
+
+        async function refreshNetwork() {
+            try { renderNetwork(await fetchJson("/api/network")); }
+            catch (error) { console.error("Erreur refreshNetwork:", error); }
+        }
+
+        function renderHealth(health) {
+            const chip = document.getElementById("health-chip");
+            const ok = health.status === "ok";
+            chip.classList.toggle("ok", ok);
+            chip.classList.toggle("degraded", !ok);
+            document.getElementById("health-label").textContent = ok ? "Moniteur OK" : "Moniteur degrade";
+            chip.title = ok ? "Tous les composants fonctionnent" : (health.problems || []).join("\n");
+            const capture = health.capture || {};
+            if (capture.interface) {
+                document.getElementById("network-name").textContent = capture.local_network ? `${capture.interface} - ${capture.local_network}` : capture.interface;
+            }
+        }
+
+        async function refreshHealth() {
+            try {
+                const response = await fetch("/api/health");
+                renderHealth(await response.json());
+            } catch (error) {
+                console.error("Erreur refreshHealth:", error);
+            }
+        }
+
+        function renderAlerts() {
+            const overview = document.getElementById("overview-alerts");
+            const all = document.getElementById("all-alerts");
+            overview.replaceChildren();
+            all.replaceChildren();
+            const alerts = state.alerts.slice().reverse();
+            if (!alerts.length) {
+                const empty = emptyNode("Aucune alerte n'a ete detectee pour le moment.", "shield-check");
+                overview.append(empty);
+                all.append(emptyNode("Aucune alerte n'a ete detectee pour le moment.", "shield-check"));
+            } else {
+                alerts.slice(0, 3).forEach((alert) => overview.append(createAlert(alert)));
+                alerts.forEach((alert) => all.append(createAlert(alert)));
+            }
+            document.getElementById("alerts-table-count").textContent = `${alerts.length} alerte${alerts.length === 1 ? "" : "s"}`;
+            updateIcons();
+        }
+
+        function renderDevices() {
+            const query = document.getElementById("device-search").value.trim().toLowerCase();
+            const entries = Object.entries(state.devices)
+                .filter(([mac, device]) => [mac, device.ip, device.hostname, device.vendor].join(" ").toLowerCase().includes(query))
+                .sort(([, a], [, b]) => (b.last_seen || 0) - (a.last_seen || 0));
+            const body = document.getElementById("device-tbody");
+            body.replaceChildren();
+            if (!entries.length) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.colSpan = 5;
+                cell.append(emptyNode(query ? "Aucun appareil ne correspond a la recherche." : "Aucun appareil vu recemment."));
+                row.append(cell); body.append(row);
+            } else {
+                entries.forEach(([mac, device]) => {
+                    const row = document.createElement("tr");
+                    row.className = "device-row"; row.tabIndex = 0; row.title = "Voir la fiche";
+                    row.addEventListener("click", () => openDevice(mac));
+                    row.addEventListener("keydown", (event) => { if (event.key === "Enter") openDevice(mac); });
+                    const name = document.createElement("td"); name.className = "device-name";
+                    const title = document.createElement("div"); title.textContent = device.hostname && device.hostname !== "Unknown" ? device.hostname : "Appareil inconnu";
+                    const macLine = document.createElement("small"); macLine.className = "muted-line"; macLine.textContent = mac; name.append(title, macLine);
+                    const ip = document.createElement("td"); const code = document.createElement("code"); code.textContent = device.ip || "N/A"; ip.append(code);
+                    const vendor = document.createElement("td"); vendor.textContent = device.vendor || "Inconnu";
+                    const sources = document.createElement("td"); sources.textContent = (device.sources || []).join(", ") || "-";
+                    const seen = document.createElement("td"); const badge = document.createElement("span"); badge.className = "badge online"; const dot = document.createElement("span"); dot.className = "dot"; badge.append(dot, document.createTextNode(device.last_seen ? formatAgo(device.last_seen) : "Actif")); seen.append(badge);
+                    row.append(name, ip, vendor, sources, seen); body.append(row);
+                });
+            }
+            document.getElementById("devices-table-count").textContent = `${entries.length} appareil${entries.length === 1 ? "" : "s"}`;
+        }
+
+        function renderTraffic() {
+            const body = document.getElementById("traffic-tbody"); body.replaceChildren();
+            const max = Math.max(...state.traffic.map((item) => item.upload + item.download), 1);
+            if (!state.traffic.length) {
+                const row = document.createElement("tr"); const cell = document.createElement("td"); cell.colSpan = 5; cell.append(emptyNode("Le trafic apparaitra ici des que des paquets seront observes.")); row.append(cell); body.append(row);
+            } else {
+                state.traffic.forEach((item) => {
+                    const row = document.createElement("tr");
+                    const ip = document.createElement("td"); const code = document.createElement("code"); code.textContent = item.ip; ip.append(code);
+                    const upload = document.createElement("td"); upload.textContent = formatBytes(item.upload || 0);
+                    const download = document.createElement("td"); download.textContent = formatBytes(item.download || 0);
+                    const connections = document.createElement("td"); connections.textContent = item.unique_connections || 0;
+                    const activity = document.createElement("td"); const bar = document.createElement("div"); bar.className = "traffic-bar"; const fill = document.createElement("span"); fill.style.width = `${Math.max(4, ((item.upload + item.download) / max) * 100)}%`; bar.append(fill); activity.append(bar);
+                    row.append(ip, upload, download, connections, activity); body.append(row);
+                });
+            }
+            document.getElementById("traffic-table-count").textContent = `${state.traffic.length} adresse${state.traffic.length === 1 ? "" : "s"}`;
+        }
+
+        function formatAgo(timestamp) {
+            const seconds = Math.max(0, Math.round(Date.now() / 1000 - timestamp));
+            if (seconds < 60) return `il y a ${seconds}s`;
+            if (seconds < 3600) return `il y a ${Math.round(seconds / 60)} min`;
+            return `il y a ${Math.round(seconds / 3600)} h`;
+        }
+
+        function cell(text, code = false) {
+            const td = document.createElement("td");
+            if (code) { const node = document.createElement("code"); node.textContent = text; td.append(node); } else { td.textContent = text; }
+            return td;
+        }
+
+        function endpoint(host, port) { return port ? `${host}:${port}` : host; }
+
+        function renderConnections(flows, dns) {
+            const flowBody = document.getElementById("flow-tbody"); flowBody.replaceChildren();
+            if (!flows.length) {
+                const row = document.createElement("tr"); const td = document.createElement("td"); td.colSpan = 7; td.append(emptyNode("Aucun flux observe pour le moment.")); row.append(td); flowBody.append(row);
+            }
+            flows.forEach((flow) => {
+                const row = document.createElement("tr");
+                const state = document.createElement("td"); const badge = document.createElement("span"); badge.className = flow.active ? "badge online" : "badge"; badge.textContent = flow.active ? (flow.closed ? "Ferme" : "Actif") : "Termine"; state.append(badge);
+                row.append(cell(endpoint(flow.client_ip, flow.client_port), true), cell(endpoint(flow.server_ip, flow.server_port), true), cell(flow.server_name || "-"), cell(flow.protocol), cell(formatBytes(flow.bytes_out || 0)), cell(formatBytes(flow.bytes_in || 0)), state);
+                flowBody.append(row);
+            });
+            document.getElementById("flow-table-count").textContent = `${flows.length} flux`;
+
+            const dnsBody = document.getElementById("dns-tbody"); dnsBody.replaceChildren();
+            if (!dns.length) {
+                const row = document.createElement("tr"); const td = document.createElement("td"); td.colSpan = 5; td.append(emptyNode("Aucune requete DNS observee.")); row.append(td); dnsBody.append(row);
+            }
+            dns.forEach((entry) => {
+                const row = document.createElement("tr");
+                row.append(cell(formatPacketTime(entry.timestamp)), cell(entry.client_ip, true), cell(entry.query), cell(entry.type), cell((entry.answers || []).join(", ") || "-"));
+                dnsBody.append(row);
+            });
+            document.getElementById("dns-table-count").textContent = `${dns.length} requete${dns.length === 1 ? "" : "s"}`;
+        }
+
+        async function refreshConnections() {
+            const ip = document.getElementById("connection-ip-filter").value.trim();
+            const suffix = ip ? `&ip=${encodeURIComponent(ip)}` : "";
+            try {
+                const [flows, dns] = await Promise.all([fetchJson(`/api/flows?limit=100${suffix}`), fetchJson(`/api/dns?limit=100${suffix}`)]);
+                renderConnections(flows, dns);
+            } catch (error) {
+                console.error("Erreur refreshConnections:", error);
+            }
+        }
+
+        function formatPacketTime(timestamp) {
+            return new Date(timestamp * 1000).toLocaleTimeString();
+        }
+
+        function endpointWithFilters() {
+            const params = new URLSearchParams({ limit: "100" });
+            const filters = [
+                ["ip", document.getElementById("packet-ip-filter").value.trim()],
+                ["protocol", document.getElementById("packet-protocol-filter").value],
+                ["direction", document.getElementById("packet-direction-filter").value],
+                ["port", document.getElementById("packet-port-filter").value],
+            ];
+            filters.forEach(([name, value]) => { if (value) params.set(name, value); });
+            return `/api/packets?${params.toString()}`;
+        }
+
+        function renderPacketSummary() {
+            const protocols = state.packetSummary.protocols || {};
+            const directions = state.packetSummary.directions || {};
+            document.getElementById("packet-summary-count").textContent = state.packetSummary.captured_packets || 0;
+            document.getElementById("packet-summary-tcp").textContent = protocols.TCP || 0;
+            document.getElementById("packet-summary-udp").textContent = protocols.UDP || 0;
+            document.getElementById("packet-summary-inbound").textContent = directions.inbound || 0;
+            document.getElementById("packet-summary-outbound").textContent = directions.outbound || 0;
+        }
+
+        function renderPackets() {
+            const body = document.getElementById("packet-tbody");
+            body.replaceChildren();
+            if (!state.packets.length) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.colSpan = 7;
+                cell.append(emptyNode("Aucun paquet ne correspond aux filtres actuels. Les nouvelles captures apparaitront automatiquement."));
+                row.append(cell);
+                body.append(row);
+            } else {
+                state.packets.forEach((packet) => {
+                    const row = document.createElement("tr");
+                    const time = document.createElement("td"); time.textContent = formatPacketTime(packet.timestamp);
+                    const direction = document.createElement("td"); const directionText = document.createElement("span"); directionText.className = "packet-direction"; directionText.textContent = packet.direction; direction.append(directionText);
+                    const protocol = document.createElement("td"); const protocolText = document.createElement("span"); protocolText.className = `protocol ${packet.protocol.toLowerCase()}`; protocolText.textContent = packet.protocol; protocol.append(protocolText);
+                    const source = document.createElement("td"); const sourceCode = document.createElement("code"); sourceCode.textContent = `${packet.source_ip}${packet.source_port ? `:${packet.source_port}` : ""}`; source.append(sourceCode);
+                    const destination = document.createElement("td"); const destinationCode = document.createElement("code"); destinationCode.textContent = `${packet.destination_ip}${packet.destination_port ? `:${packet.destination_port}` : ""}`; destination.append(destinationCode);
+                    const size = document.createElement("td"); size.textContent = formatBytes(packet.size || 0);
+                    const flags = document.createElement("td"); flags.textContent = packet.tcp_flags || "-";
+                    row.append(time, direction, protocol, source, destination, size, flags);
+                    body.append(row);
+                });
+            }
+            document.getElementById("packet-table-count").textContent = `${state.packets.length} paquet${state.packets.length === 1 ? "" : "s"}`;
+        }
+
+        async function refreshPackets() {
+            try {
+                const [packets, summary] = await Promise.all([fetchJson(endpointWithFilters()), fetchJson("/api/packets/summary")]);
+                state.packets = packets;
+                state.packetSummary = summary;
+                renderPackets();
+                renderPacketSummary();
+            } catch (error) {
+                console.error("Erreur refreshPackets:", error);
+            }
+        }
+
+        function buildPolyline(values, max) {
+            if (!values.length) return "";
+            const width = 760, height = 260, padding = 20, step = values.length === 1 ? 0 : width / (values.length - 1);
+            return values.map((value, index) => `${index * step},${height - padding - ((value / max) * (height - padding * 2))}`).join(" ");
+        }
+
+        function pushTraffic(upload, download) {
+            state.chart.upload.push(upload); state.chart.download.push(download);
+            if (state.chart.upload.length > maxHistory) { state.chart.upload.shift(); state.chart.download.shift(); }
+            const max = Math.max(...state.chart.upload, ...state.chart.download, 1);
+            uploadLine.setAttribute("points", buildPolyline(state.chart.upload, max));
+            downloadLine.setAttribute("points", buildPolyline(state.chart.download, max));
+        }
+
+        function renderStats(stats) {
+            document.getElementById("device-count").textContent = stats.devices_count || 0;
+            document.getElementById("total-rate").textContent = formatRate(stats.current_total_bps || 0);
+            document.getElementById("alert-count").textContent = stats.alerts_count || 0;
+            document.getElementById("incident-foot").textContent = `${stats.open_incidents || 0} incident${stats.open_incidents === 1 ? "" : "s"} ouvert${stats.open_incidents === 1 ? "" : "s"}`;
+            document.getElementById("traffic-total").textContent = formatBytes(stats.total_traffic_bytes || 0);
+            document.getElementById("upload-rate").textContent = formatRate(stats.current_upload_bps || 0);
+            document.getElementById("download-rate").textContent = formatRate(stats.current_download_bps || 0);
+            document.getElementById("last-update").textContent = `Mis a jour a ${new Date((stats.timestamp || Date.now() / 1000) * 1000).toLocaleTimeString()}`;
+        }
+
+        async function fetchJson(url) { const response = await fetch(url); if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); }
+
+        async function refreshSnapshot() {
+            const button = document.getElementById("refresh-button"); button.classList.add("is-loading");
+            try {
+                const [stats, devices, alerts, traffic] = await Promise.all([fetchJson("/api/stats"), fetchJson("/api/devices"), fetchJson("/api/alerts"), fetchJson("/api/traffic")]);
+                state.devices = devices; state.alerts = alerts; state.traffic = traffic;
+                renderStats(stats); renderDevices(); renderAlerts(); renderTraffic();
+                if (traffic.length) pushTraffic(traffic.reduce((sum, item) => sum + (item.upload || 0), 0), traffic.reduce((sum, item) => sum + (item.download || 0), 0));
+                if (document.querySelector('[data-view="analysis"]').classList.contains("active")) refreshPackets();
+                if (document.querySelector('[data-view="connections"]').classList.contains("active")) refreshConnections();
+                if (document.querySelector('[data-view="network"]').classList.contains("active")) refreshNetwork();
+                if (document.querySelector('[data-view="incidents"]').classList.contains("active")) refreshIncidents();
+                refreshHealth();
+                if (!supportsRealtime) setConnection(false);
+            } catch (error) {
+                console.error("Erreur refreshSnapshot:", error); setConnection(false);
+            } finally { button.classList.remove("is-loading"); }
+        }
+
+        function scheduleRefresh() {
+            if (realtimeRefreshTimer) return;
+            realtimeRefreshTimer = window.setTimeout(() => {
+                realtimeRefreshTimer = null;
+                refreshSnapshot();
+            }, 600);
+        }
+
+        function activateView(view) {
+            document.querySelectorAll(".view").forEach((element) => element.classList.toggle("active", element.dataset.view === view));
+            document.querySelectorAll("[data-view-target]").forEach((element) => element.classList.toggle("active", element.dataset.viewTarget === view));
+            document.getElementById("breadcrumb-title").textContent = labels[view];
+            if (view === "analysis") refreshPackets();
+            if (view === "connections") refreshConnections();
+            if (view === "network") refreshNetwork();
+            if (view === "incidents") refreshIncidents();
+        }
+
+        function attachRealtime() {
+            if (!supportsRealtime) return;
+            const socket = io();
+            socket.on("connect", () => { setConnection(true); refreshSnapshot(); });
+            socket.on("disconnect", () => setConnection(false));
+            socket.on("device_update", (devices) => { state.devices = devices; renderDevices(); scheduleRefresh(); });
+            socket.on("traffic_update", (event) => { pushTraffic(event.upload || 0, event.download || 0); scheduleRefresh(); });
+            socket.on("alert", () => scheduleRefresh());
+            socket.on("incident_update", () => scheduleRefresh());
+        }
+
+        document.querySelectorAll("[data-view-target]").forEach((button) => button.addEventListener("click", () => activateView(button.dataset.viewTarget)));
+        document.getElementById("refresh-button").addEventListener("click", refreshSnapshot);
+        document.getElementById("devices-refresh").addEventListener("click", refreshSnapshot);
+        document.getElementById("device-search").addEventListener("input", renderDevices);
+        document.getElementById("connection-ip-filter").addEventListener("change", refreshConnections);
+        document.getElementById("incident-status-filter").addEventListener("change", refreshIncidents);
+        document.getElementById("drawer-close").addEventListener("click", closeDevice);
+        document.getElementById("drawer-backdrop").addEventListener("click", closeDevice);
+        document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeDevice(); });
+        document.getElementById("packet-filter-form").addEventListener("submit", (event) => { event.preventDefault(); refreshPackets(); });
+        updateIcons(); setConnection(false); attachRealtime(); refreshSnapshot(); setInterval(refreshSnapshot, 5000);
+    </script>
+</body>
+</html>

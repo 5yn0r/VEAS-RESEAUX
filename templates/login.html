@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101816">
+    <title>WiFi Guardian - Connexion</title>
+    <style>
+        :root { --canvas: #f4f6f4; --surface: #ffffff; --ink: #17201d; --muted: #68736e; --line: #dbe2dd; --nav: #101816; --green: #16825d; --red: #c54242; --red-soft: #fceaea; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--canvas); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; }
+        main { width: 100%; max-width: 360px; padding: 28px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+        .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+        .mark { width: 32px; height: 32px; border-radius: 7px; background: var(--green); }
+        h1 { margin: 0; font-size: 18px; }
+        p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+        label { display: block; margin: 14px 0 6px; font-weight: 650; font-size: 12px; }
+        input { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+        input:focus { outline: 2px solid var(--green); outline-offset: 1px; }
+        button { width: 100%; margin-top: 20px; padding: 10px; border: 0; border-radius: 6px; background: var(--nav); color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
+        .error { margin-top: 14px; padding: 9px 11px; border-radius: 6px; color: var(--red); background: var(--red-soft); font-size: 13px; }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="brand"><div class="mark"></div><div><h1>WiFi Guardian</h1><p>Connexion au tableau de bord</p></div></div>
+        <form method="post">
+            <label for="username">Utilisateur</label>
+            <input id="username" name="username" autocomplete="username" required autofocus>
+            <label for="password">Mot de passe</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+            {% if error %}<div class="error" role="alert">{{ error }}</div>{% endif %}
+            <button type="submit">Se connecter</button>
+        </form>
+    </main>
+</body>
+</html>

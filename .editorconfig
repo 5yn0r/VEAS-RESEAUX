@@ -1,0 +1,29 @@
+# EditorConfig - Cohérence du code entre IDE
+
+root = true
+
+# Tous les fichiers
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Python
+[*.py]
+indent_style = space
+indent_size = 4
+
+# YAML/JSON
+[*.{yml,yaml,json}]
+indent_style = space
+indent_size = 2
+
+# Markdown
+[*.md]
+trim_trailing_whitespace = false
+
+# HTML/CSS/JavaScript
+[*.{html,css,js}]
+indent_style = space
+indent_size = 2

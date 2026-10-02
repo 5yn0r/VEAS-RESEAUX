@@ -1,0 +1,16 @@
+services:
+  wifi-guardian:
+    build: .
+    container_name: wifi-guardian
+    environment:
+      - DEBUG=False
+      - LOG_LEVEL=INFO
+      - SCAN_INTERVAL=30
+      - UPDATE_INTERVAL=2
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
