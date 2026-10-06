@@ -23,6 +23,18 @@ TECHNIQUES = {
     "T1557.003": ("DHCP Spoofing", ["credential-access", "collection"]),
     "T1568": ("Dynamic Resolution", ["command-and-control"]),
     "T1572": ("Protocol Tunneling", ["command-and-control"]),
+    "T1059": ("Command and Scripting Interpreter", ["execution"]),
+    "T1083": ("File and Directory Discovery", ["discovery"]),
+    "T1095": ("Non-Application Layer Protocol", ["command-and-control"]),
+    "T1105": ("Ingress Tool Transfer", ["command-and-control"]),
+    "T1190": ("Exploit Public-Facing Application", ["initial-access"]),
+    "T1498": ("Network Denial of Service", ["impact"]),
+    "T1499": ("Endpoint Denial of Service", ["impact"]),
+    "T1505.003": ("Server Software Component: Web Shell", ["persistence"]),
+    "T1552": ("Unsecured Credentials", ["credential-access"]),
+    "T1568.002": ("Dynamic Resolution: Domain Generation Algorithms", ["command-and-control"]),
+    "T1595": ("Active Scanning", ["reconnaissance"]),
+    "T1595.003": ("Active Scanning: Wordlist Scanning", ["reconnaissance"]),
 }
 
 ALERT_TECHNIQUES = {
@@ -49,6 +61,11 @@ ALERT_TECHNIQUES = {
 
 def technique_url(technique_id: str) -> str:
     return "https://attack.mitre.org/techniques/" + technique_id.replace(".", "/") + "/"
+
+
+def technique(technique_id: str) -> dict:
+    name, tactics = TECHNIQUES[technique_id]
+    return {"id": technique_id, "name": name, "tactics": list(tactics), "url": technique_url(technique_id)}
 
 
 def techniques_for(alert_type: str) -> list[dict]:

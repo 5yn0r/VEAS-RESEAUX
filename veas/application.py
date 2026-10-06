@@ -8,11 +8,12 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from flask import Flask, Response, abort, g, jsonify, render_template, request
+from flask import Flask, Response, abort, g, jsonify, render_template, request, send_file
 from flask_socketio import SocketIO
 
 import config
 from veas.alerts import SEVERITIES
+from veas.forensics.jobs import JOB_ID, ForensicsManager
 from veas.auth import AuthSettings, init_auth
 from veas.incidents import STATUSES
 from veas.linkinfo import NetworkInfo
@@ -57,7 +58,7 @@ def _open_storage(db_path: str | None):
         return None
 
 
-def create_app(db_path: str | None = None, network=None):
+def create_app(db_path: str | None = None, network=None, forensics_dir: str | None = None):
     """Build the Flask app. ``db_path=None`` uses ``config.DB_PATH``; ``""`` disables storage."""
     logging.basicConfig(level=getattr(logging, config.LOG_LEVEL.upper(), logging.INFO))
     project_root = Path(__file__).resolve().parent.parent
@@ -70,6 +71,8 @@ def create_app(db_path: str | None = None, network=None):
         static_url_path="/static",
     )
     app.config["SECRET_KEY"] = config.SECRET_KEY
+    # Largest accepted request: a capture uploaded for forensic analysis.
+    app.config["MAX_CONTENT_LENGTH"] = config.FORENSICS_MAX_MB * 1024 * 1024
     socketio = SocketIO(app, cors_allowed_origins=config.CORS_ALLOWED_ORIGINS)
     init_auth(
         app,
@@ -239,6 +242,65 @@ def create_app(db_path: str | None = None, network=None):
             mimetype="application/json" if export_format == "json" else "text/csv",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
+
+    forensics = ForensicsManager(
+        config.FORENSICS_DIR if forensics_dir is None else forensics_dir,
+        max_reports=config.FORENSICS_MAX_REPORTS,
+        max_packets=config.FORENSICS_MAX_PACKETS,
+    )
+    app.extensions["veas_forensics"] = forensics
+
+    def forensic_job(job_id: str) -> dict:
+        job = forensics.get(job_id) if JOB_ID.match(job_id) else None
+        if not job:
+            abort(404, description="unknown analysis")
+        return job
+
+    @app.errorhandler(413)
+    def too_large(_error):
+        return jsonify({"error": f"fichier trop volumineux (maximum {config.FORENSICS_MAX_MB} Mo)"}), 413
+
+    @app.route("/api/forensics", methods=["GET", "POST"])
+    def api_forensics():
+        if request.method == "GET":
+            return jsonify(forensics.list())
+        # A custom header cannot be sent by a cross-site form, so uploads must come from the dashboard or a script.
+        if request.headers.get("X-VEAS-Upload") != "1":
+            abort(400, description="missing X-VEAS-Upload header")
+        upload = request.files.get("capture")
+        if upload is None or not upload.filename:
+            abort(400, description="expected a file field named 'capture'")
+        try:
+            job = forensics.submit(upload.stream, upload.filename)
+        except ValueError as exc:
+            abort(400, description=str(exc))
+        return jsonify(job), 202
+
+    @app.route("/api/forensics/<job_id>", methods=["GET", "DELETE"])
+    def api_forensic(job_id):
+        job = forensic_job(job_id)
+        if request.method == "DELETE":
+            if not forensics.delete(job_id):
+                abort(409, description="analysis is running")
+            return "", 204
+        return jsonify({"job": job, "report": forensics.report(job_id) if job["status"] == "done" else None})
+
+    @app.route("/api/forensics/<job_id>/export")
+    def api_forensic_export(job_id):
+        job = forensic_job(job_id)
+        path = forensics.report_path(job_id)
+        if not path:
+            abort(404, description="report not available")
+        name = Path(job["filename"]).stem or "capture"
+        return send_file(path, mimetype="application/json", as_attachment=True, download_name=f"veas-forensique-{name}.json")
+
+    @app.route("/api/forensics/<job_id>/pcap")
+    def api_forensic_pcap(job_id):
+        job = forensic_job(job_id)
+        path = forensics.capture_path(job_id)
+        if not path:
+            abort(404, description="capture not available")
+        return send_file(path, mimetype="application/vnd.tcpdump.pcap", as_attachment=True, download_name=job["filename"])
 
     @app.route("/api/notifications/test", methods=["POST"])
     def api_notifications_test():

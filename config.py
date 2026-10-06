@@ -99,6 +99,12 @@ SIEM_JSON_BACKUPS = int(os.getenv("SIEM_JSON_BACKUPS", "5"))
 SIEM_MIN_SEVERITY = os.getenv("SIEM_MIN_SEVERITY", "low")
 SIEM_INCLUDE_INCIDENTS = os.getenv("SIEM_INCLUDE_INCIDENTS", "true").lower() == "true"
 
+# Forensic analysis of uploaded captures (.pcap / .pcapng).
+FORENSICS_DIR = os.getenv("FORENSICS_DIR", "data/forensics")
+FORENSICS_MAX_MB = _positive_int("FORENSICS_MAX_MB", 200)
+FORENSICS_MAX_REPORTS = _positive_int("FORENSICS_MAX_REPORTS", 20)
+FORENSICS_MAX_PACKETS = _positive_int("FORENSICS_MAX_PACKETS", 2000000)
+
 # Threat intelligence: every *.txt file in THREAT_INTEL_DIR is loaded (IPs, CIDRs,
 # domains, or hosts-file lines). Optional comma-separated feed URLs are downloaded there.
 THREAT_INTEL_DIR = os.getenv("THREAT_INTEL_DIR", "data/intel")
